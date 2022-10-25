@@ -1,28 +1,34 @@
 #include <string>
+#include <vector>
+#include <iostream>
+#include <unordered_set>
 using namespace std;
+
 
 class Solution {
 public:
     int lengthOfLongestSubstring(string s) {
-      int maxlength = 0;
-      int index1 = 0, index2 = 0;
-      int ascii[10000] = {0};
-      while (index2 < s.length()) {
-        while (ascii[s[index2]] == 0 && index2<s.length()) {
-          ascii[s[index2]] += 1;
-          index2 += 1;
-          maxlength =
-              ((index2 - index1) > maxlength) ? (index2 - index1) : maxlength;
+      if (!s.length()) return 0;
+      int count[1000] = {0};
+      int i = 0, j = 1, max = 1;
+      while (j < s.length()) {
+        count[s[i]] = 1;
+        while (!count[s[j]] && j < s.length()) {
+          count[s[j]] = 1;
+          j++;
         }
-        if ( index2 == s.length()) {
-          break;
-        }
-        ascii[s[index2]] = 2;
-        index2+=1;
-        while (ascii[s[index1]] != 2) {
-          index1++;
-        }
-        ascii[s[index2]] = 1;
-        }
+        max = std::max(j - i, max);
+        count[s[i]] = 0;
+        i++;
+        if (j == i) j++;
+      }
+      return max;
     }
 };
+
+int main() {
+  Solution solution;
+  string s = "pwwkew";
+  cout << solution.lengthOfLongestSubstring(s) << endl;
+  return 0;
+}
