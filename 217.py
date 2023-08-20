@@ -2,12 +2,11 @@ from ref import *
 
 class Solution:
     def containsDuplicate(self, nums: List[int]) -> bool:
-        is_exist = {}
+        hashset = set()
         for num in nums:
-            if num in is_exist:
+            if num in hashset:
                 return True
             else:
-                is_exist[num] = 0
+                hashset.add(num)
         return False
-    
     
