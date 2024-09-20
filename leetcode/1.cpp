@@ -1,5 +1,4 @@
-#include <vector>
-using namespace std;
+#include "leetcode_base.h"
 
 class Solution {
 public:
