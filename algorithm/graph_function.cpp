@@ -30,6 +30,18 @@ void dfs(Node* node) {
     cout << endl;
 }
 
+void dfs_reverse(Node* node, unordered_set<Node*>& visited) {
+    if (!node) {
+        return;
+    }
+    if (!visited.count(node)) {
+        visited.insert(node);
+        for (Node* n : node->nexts) {
+            dfs_reverse(n, visited);
+        }
+    }
+}
+
 void bfs(Node* node) {
     if (!node)
         return;
