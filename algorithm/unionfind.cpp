@@ -63,6 +63,38 @@ class UnionFind {
     
 };
 
+class UnionFind2 {
+    vector<int> fa;
+
+    UnionFind2(int n) {
+        for (int i = 0; i < n; i++) {
+            fa.push_back(i);
+        }
+    }
+
+    int Find(int x) {
+        while (x != fa[x]) {
+            fa[x] = fa[fa[x]];
+            x = fa[x];
+        }
+        return x;
+    }
+
+    bool Union(int x, int y) {
+        int rx = Find(x);
+        int ry = Find(y);
+        if (rx == ry) {
+            return false;
+        }
+        fa[rx] = ry;
+        return true;
+    }
+
+    int SetNum() {
+        
+    }
+};
+
 int main() {
     UnionFind uf(5);
     uf.Union(1, 3);
