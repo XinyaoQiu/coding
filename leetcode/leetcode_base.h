@@ -5,6 +5,10 @@
 #include <cmath>
 #include <algorithm>
 #include <queue>
+#include <string>
+#include <cctype>
+#include <numeric>
+#include <climits>
 
 using namespace std;
 
