@@ -1,34 +1,24 @@
-#include <string>
-#include <vector>
-#include <iostream>
-#include <unordered_set>
-using namespace std;
-
+// longest-substring-without-repeating-characters
+#include "leetcode_base.h"
 
 class Solution {
 public:
     int lengthOfLongestSubstring(string s) {
-      if (!s.length()) return 0;
-      int count[1000] = {0};
-      int i = 0, j = 1, max = 1;
-      while (j < s.length()) {
-        count[s[i]] = 1;
-        while (!count[s[j]] && j < s.length()) {
-          count[s[j]] = 1;
-          j++;
+        if (s.length() == 0) {
+            return 0;
         }
-        max = std::max(j - i, max);
-        count[s[i]] = 0;
-        i++;
-        if (j == i) j++;
-      }
-      return max;
+        unordered_map<char, int> map;
+        int result = 0;
+        int left = 0;
+        for (int right = 0; right < s.length(); right++) {
+            if (!map.count(s[right]) || map[s[right]] < left) {
+                map[s[right]] = right;
+                result = max(result, right - left + 1);
+            } else {
+                left = map[s[right]] + 1;
+                map[s[right]] = right;
+            }
+        }
+        return result;
     }
 };
-
-int main() {
-  Solution solution;
-  string s = "pwwkew";
-  cout << solution.lengthOfLongestSubstring(s) << endl;
-  return 0;
-}

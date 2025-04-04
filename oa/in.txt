@@ -1,0 +1,14 @@
+70 20 13
+1 Mona
+1 Kaveh
+4
+2 Mona
+1 Eden
+1 Mona
+2 Kaveh
+4
+1 Kaveh
+4
+3 50
+2 Eden
+4

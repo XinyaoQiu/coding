@@ -4,13 +4,6 @@
 
 using namespace std;
 
-struct Node {
-    Node* next;
-    int value;
-
-    Node(int value_) : value(value_), next(nullptr) {}
-};
-
 class UnionFind {
   public:
     vector<int> fa;
