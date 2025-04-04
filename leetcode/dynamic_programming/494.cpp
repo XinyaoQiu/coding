@@ -2,6 +2,8 @@
 #include <vector>
 using namespace std;
 
+// 0-1 knapsack problem
+
 // postive - negative = target
 // postive + negative = sum(nums)
 // potive = (sum(nums) + target) / 2
