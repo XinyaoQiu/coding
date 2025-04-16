@@ -14,12 +14,10 @@ class Solution {
             }
         }
         int find(int x) {
-            if (x != parent[x]) {
-                int p = parent[x];
-                parent[x] = find(p);
-                weight[x] *= weight[p]; 
-            }
-            return parent[x];
+            if (x == parent[x]) return x;
+            int p = parent[x];
+            parent[x] = find(p);
+            weight[x] *= weight[p];
         }
         void unite(int x, int y, double w) {
             int parent_x = find(x);
