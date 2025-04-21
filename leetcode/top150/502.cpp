@@ -3,10 +3,6 @@
 #include <queue>
 using namespace std;
 
-/*
-    [3, 2, 1]
-*/
-
 class Solution {
 public:
     int findMaximizedCapital(int k, int w, vector<int>& profits, vector<int>& capital) {
