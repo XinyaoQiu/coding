@@ -6,8 +6,7 @@ using namespace std;
 vector<int> generateNext(string p) {
     vector<int> nexts(p.length(), 0);
     int m = p.length();
-    int i = 0;
-    for (int j = 1; j < m; j++) {
+    for (int i = 0, j = 1; j < m; j++) {
         while (i > 0 && p[i] != p[j]) {
             i = nexts[i - 1];
         }
