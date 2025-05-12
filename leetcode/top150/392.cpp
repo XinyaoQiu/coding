@@ -5,16 +5,13 @@ using namespace std;
 class Solution {
   public:
     bool isSubsequence(string s, string t) {
-        vector<int> count_t(26);
-        for (char c : t) {
-            count_t[c - 'a']++;
-        }
-        for (char c : s) {
-            count_t[c - 'a']--;
-            if (count_t[c - 'a'] < 0) {
-                return false;
+        int i = 0, j = 0;
+        while (i < s.size() && j < t.size()) {
+            if (s[i] == t[j]) {
+                i++;
             }
+            j++;
         }
-        return true;
+        return i == s.size();
     }
 };
