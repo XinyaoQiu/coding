@@ -7,41 +7,30 @@ class Solution {
   public:
     vector<int> findSubstring(string s, vector<string>& words) {
         int wl = words[0].size(), s_size = s.size(), w_size = words.size();
-        unordered_map<string, int> count;
         vector<int> ans;
-        for (int i = 0; i < wl; ++i) {
-            if (i + w_size * wl >= s_size) {
-                break;
-            }
+        for (int i = 0; i < wl && i + w_size * wl <= s_size; ++i) {
+            unordered_map<string, int> count;
             for (int j = 0; j < w_size; ++j) {
                 ++count[s.substr(i + j * wl, wl)];
-                --count[words[j]];
             }
-            int diff = 0;
-            for (auto& [k, v] : count) {
-                if (v != 0) {
-                    ++diff;
+            for (string& word : words) {
+                if (--count[word] == 0) {
+                    count.erase(word);
                 }
             }
-            if (diff == 0) {
-                ans.emplace_back(0);
+            if (count.empty()) {
+                ans.emplace_back(i);
             }
-            for (int j = i; j + w_size * wl < s_size; j += wl) {
-                string in_word = s.substr(j + w_size * wl, wl);
-                string out_word = s.substr(j, wl);
-                if (count[out_word] == 0) {
-                    ++diff;
-                } else if (count[out_word] == 1) {
-                    --diff;
+            for (int j = i; j + w_size * wl <= s_size; j += wl) {
+                string in = s.substr(j + w_size * wl , wl);
+                string out = s.substr(j, wl);
+                if (++count[in] == 0) {
+                    count.erase(in);
                 }
-                --count[out_word];
-                if (count[in_word] == 0) {
-                    ++diff;
-                } else if (count[in_word] == -1) {
-                    --diff;
+                if (--count[out] == 0) {
+                    count.erase(out);
                 }
-                ++count[in_word];
-                if (diff == 0) {
+                if (count.empty()) {
                     ans.emplace_back(j + wl);
                 }
             }
