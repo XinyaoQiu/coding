@@ -4,7 +4,8 @@ using namespace std;
 class Solution {
   public:
     vector<int> spiralOrder(vector<vector<int>>& matrix) {
-        int top = 0, bottom = matrix.size() - 1, left = 0, right = matrix[0].size() - 1;
+        int m = matrix.size(), n = matrix[0].size();
+        int top = 0, bottom = m - 1, left = 0, right = n - 1;
         vector<int> ans;
         while (top <= bottom && left <= right) {
             for (int i = left; i <= right; ++i) {
