@@ -8,28 +8,14 @@ class Solution {
         for (int i = 0; i < m; ++i) {
             for (int j = 0; j < n; ++j) {
                 int count = 0;
-                if (i - 1 >= 0) {
-                    if (j - 1 >= 0) {
-                        count += board[i - 1][j - 1] > 0;
-                    }
-                    count += board[i - 1][j] > 0;
-                    if (j + 1 < n) {
-                        count += board[i - 1][j + 1] > 0;
-                    }
-                }
-                if (j - 1 >= 0) {
-                    count += board[i][j - 1] > 0;
-                }              
-                if (j + 1 < n) {
-                    count += board[i][j + 1] > 0;
-                }
-                if (i + 1 < m) {
-                    if (j - 1 >= 0) {
-                        count += board[i + 1][j - 1] > 0;
-                    }
-                    count += board[i + 1][j] > 0;
-                    if (j + 1 < n) {
-                        count += board[i + 1][j + 1] > 0;
+                for (int k = -1; k <= 1; ++k) {
+                    for (int l = -1; l <= 1; ++l) {
+                        if (!(k == 0 && l == 0)) {
+                            int r = i + k, c = j + l;
+                            if (r >= 0 && r < m && c >= 0 && c < n && board[r][c] >= 1) {
+                                ++count;
+                            }
+                        }
                     }
                 }
                 board[i][j] = board[i][j] == 1 ? count + 1 : -count;
