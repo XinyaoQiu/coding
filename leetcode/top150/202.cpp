@@ -1,23 +1,22 @@
-#include <vector>
 #include <unordered_set>
+#include <vector>
 using namespace std;
 
 class Solution {
-    int getNext(int n) {
+    int get_next(int n) {
         int res = 0;
         while (n > 0) {
-            int d = n % 10;
-            res += d * d;
+            res += (n % 10) * (n % 10);
             n /= 10;
         }
         return res;
     }
-public:
+  public:
     bool isHappy(int n) {
         int slow = n, fast = n;
-        while (1) {
-            slow = getNext(slow);
-            fast = getNext(getNext(fast));
+        while (fast != 1) {
+            slow = get_next(slow);
+            fast = get_next(get_next(fast));
             if (slow == fast) {
                 break;
             }
