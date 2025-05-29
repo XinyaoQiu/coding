@@ -9,9 +9,14 @@ class Solution {
         for (char c : s) {
             ++count[c - 'a'];
         }
-        for (char c : s) {
+        for (char c : t) {
             --count[c - 'a'];
             if (count[c - 'a'] < 0) {
+                return false;
+            }
+        }
+        for (int i = 0; i < 26; ++i) {
+            if (count[i] > 0) {
                 return false;
             }
         }
