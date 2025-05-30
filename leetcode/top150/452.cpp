@@ -11,15 +11,20 @@ using namespace std;
 class Solution {
   public:
     int findMinArrowShots(vector<vector<int>>& points) {
-        int n = points.size();
-        sort(points.begin(), points.end(), [](vector<int>& v1, vector<int>& v2) {
-            return v1[1] < v2[1];
+        sort(points.begin(), points.end(), [](const vector<int>& a, const vector<int>& b) {
+            return a[0] < b[0];
         });
-        int pos = points[0][1], ans = 1;
+        int n = points.size();
+        int start = points[0][0], end = points[0][1];
+        int ans = 1;
         for (auto& v : points) {
-            if (v[0] > pos) {
-                pos = v[1];
-                ans++;
+            if (v[0] <= end) {
+                start = v[0];
+                end = min(end, v[1]);
+            } else {
+                start = v[0];
+                end = v[1];
+                ++ans;
             }
         }
         return ans;
