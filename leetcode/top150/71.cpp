@@ -3,26 +3,35 @@
 using namespace std;
 
 class Solution {
-  public:
+public:
     string simplifyPath(string path) {
-        vector<string> dirs;
-        int n = path.size();
-        for (int i = 0; i < n; i++) {
-            if (path[i] == '/') continue;
-            string dir;
-            while (i < n && path[i] != '/') {
-                dir += path[i++];
+        vector<string> names;
+        string name;
+        for (char c : path) {
+            if (c == '/') {
+                if (name == "..") {
+                    if (!names.empty()) {
+                        names.pop_back();
+                    }
+                } else if (name != "" && name != ".") {
+                    names.emplace_back(name);
+                }
+                name.clear();
+            } else {
+                name += c;
             }
-            if (dir == "..") {
-                if (!dirs.empty()) dirs.pop_back();
-            } else if (dir != "" && dir != ".") {
-                dirs.push_back(dir);
+        }
+        if (name == "..") {
+            if (!names.empty()) {
+                names.pop_back();
             }
+        } else if (name != "" && name != ".") {
+            names.emplace_back(name);
         }
         string ans;
-        for (string dir : dirs) {
-            ans += "/" + dir;
+        for (string& name : names) {
+            ans += "/" + name;
         }
-        return ans == "" ? "/" : ans;
+        return ans == "" ? "/": ans;
     }
 };
