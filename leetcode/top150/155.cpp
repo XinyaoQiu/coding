@@ -27,6 +27,7 @@ public:
     int getMin() {
         return stack.back().second;
     }
+    
 };
 
 /**
