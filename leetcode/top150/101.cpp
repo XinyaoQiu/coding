@@ -20,5 +20,5 @@ class Solution {
   public:
     bool isSymmetric(TreeNode* root) {
         return areSymmetric(root, root);
-    }
+    } 
 };
