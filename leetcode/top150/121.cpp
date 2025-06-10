@@ -11,5 +11,5 @@ class Solution {
             ans = max(ans, price - start);
         }
         return ans;
-    }
+    } 
 };
