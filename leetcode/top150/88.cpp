@@ -11,5 +11,5 @@ class Solution {
         while (p2 >= 0) {
             nums1[i--] = nums2[p2--];
         }
-    }
+    } 
 };
