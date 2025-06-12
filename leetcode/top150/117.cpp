@@ -18,30 +18,32 @@ public:
 };
 
 class Solution {
+    void handle(Node* &last, Node* &p, Node* &nextStart) {
+        if (last) {
+            last->next = p;
+        }
+        if (!nextStart) {
+            nextStart = p;
+        }
+        last = p;
+    }
 public:
     Node* connect(Node* root) {
         if (!root) {
             return nullptr;
         }
-        queue<Node*> q;
-        q.push(root);
-        while (!q.empty()) {
-            int size = q.size();
-            Node* pre = nullptr;
-            for (int i = 0; i < size; ++i) {
-                Node* node = q.front();
-                q.pop();
-                if (pre) {
-                    pre->next = node;
+        Node* start = root;
+        while (start) {
+            Node* last = nullptr, *nextStart = nullptr;
+            for (Node* p = start; p != nullptr; p = p->next) {
+                if (p->left) {
+                    handle(last, p->left, nextStart);
                 }
-                pre = node;
-                if (node->left) {
-                    q.push(node->left);
-                }
-                if (node->right) {
-                    q.push(node->right);
+                if (p->right) {
+                    handle(last, p->right, nextStart);
                 }
             }
+            start = nextStart;
         }
         return root;
     }
