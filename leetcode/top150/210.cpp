@@ -6,39 +6,36 @@ class Solution {
     vector<vector<int>> edges;
     vector<int> visited;
     vector<int> ans;
-    bool is_cycle = false;
+    bool valid = true;
     void dfs(int u) {
-        visited[u] = 1;
-        for (int v : edges[u]) {
-            if (visited[v] == 0) {
-                visited[v] = 1;
+        if (!valid || visited[u] == 1) {
+            valid = false;
+            ans.clear();
+            return;
+        }
+        if (visited[u] == 0) {
+            visited[u] = 1;
+            for (int v : edges[u]) {
                 dfs(v);
-                if (is_cycle) {
+                if (!valid) {
                     return;
                 }
-            } else if (visited[v] == 1) {
-                is_cycle = true;
-                return;
             }
+            visited[u] = 2;
+            ans.push_back(u);
         }
-        visited[u] = 2;
-        ans.push_back(u);
     }
 public:
     vector<int> findOrder(int numCourses, vector<vector<int>>& prerequisites) {
         edges.resize(numCourses);
         visited.resize(numCourses);
         for (auto& v : prerequisites) {
-            edges[v[0]].push_back(v[1]);
+            edges[v[1]].push_back(v[0]);
         }
-        for (int i = 0; i < numCourses && !is_cycle; ++i) {
-            if (!visited[i]) {
-                dfs(i);
-            }
+        for (int i = 0; i < numCourses && valid; ++i) {
+            dfs(i);
         }
-        if (is_cycle) {
-            return {};
-        }
+        reverse(ans.begin(), ans.end());
         return ans;
     }
 };
