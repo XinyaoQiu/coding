@@ -6,27 +6,29 @@ class Solution {
     vector<int> visited;
     bool valid = true;
     void dfs(int u) {
-        if (visited[u] == 1) {
-            valid = false;
-            return;
-        }
-        if (valid && visited[u] == 0) {
-            visited[u] = 1;
-            for (int v : edges[u]) {
+        visited[u] = 1;
+        for (int v : edges[u]) {
+            if (visited[v] == 0) {
                 dfs(v);
+                if (!valid) {
+                    return;
+                }
+            } else if (visited[v] == 1) {
+                valid = false;
+                return;
             }
-            visited[u] = 2;
         }
+        visited[u] = 2;
     }
 public:
     bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
         edges.resize(numCourses);
         visited.resize(numCourses);
         for (auto& v : prerequisites) {
-            edges[v[0]].push_back(v[1]);
+            edges[v[1]].push_back(v[0]);
         }
-        for (int i = 0; i < numCourses; ++i) {
-            if (!visited[i]) {
+        for (int i = 0; i < numCourses && valid; ++i) {
+            if (visited[i] == 0) {
                 dfs(i);
             }
         }
