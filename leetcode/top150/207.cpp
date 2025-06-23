@@ -6,19 +6,20 @@ class Solution {
     vector<int> visited;
     bool valid = true;
     void dfs(int u) {
-        visited[u] = 1;
-        for (int v : edges[u]) {
-            if (visited[v] == 0) {
+        if (!valid || visited[u] == 1) {
+            valid = false;
+            return;
+        }
+        if (visited[u] == 0) {
+            visited[u] = 1;
+            for (int v : edges[u]) {
                 dfs(v);
                 if (!valid) {
                     return;
                 }
-            } else if (visited[v] == 1) {
-                valid = false;
-                return;
             }
+            visited[u] = 2;
         }
-        visited[u] = 2;
     }
 public:
     bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
@@ -28,9 +29,7 @@ public:
             edges[v[1]].push_back(v[0]);
         }
         for (int i = 0; i < numCourses && valid; ++i) {
-            if (visited[i] == 0) {
-                dfs(i);
-            }
+            dfs(i);
         }
         return valid;
     }
