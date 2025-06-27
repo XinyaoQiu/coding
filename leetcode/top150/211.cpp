@@ -53,6 +53,7 @@ class WordDictionary {
     bool search(string word) {
         return dfs(word, 0, root);
     }
+    
 };
 
 /**
