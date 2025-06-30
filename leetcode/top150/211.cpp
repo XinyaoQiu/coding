@@ -1,59 +1,53 @@
 #include <string>
 #include <vector>
+#include <queue>
 using namespace std;
 
-/*
-             0
-        /'a' |'b' \'c'
-       0     1     1
-      /'d'          \'e'
-     1               1
-*/
-
 class WordDictionary {
-    struct TrieNode {
-        bool isEnd;
-        vector<TrieNode*> nexts;
-        TrieNode() : isEnd(false), nexts(26, nullptr) {}
+    struct TreeNode {
+        int end;
+        vector<TreeNode*> children;
+        TreeNode() : end(0), children(26) {}
     };
-    TrieNode* root;
-  public:
-    WordDictionary() : root(new TrieNode()) {}
-
+    TreeNode* root;
+public:
+    WordDictionary() {
+        root = new TreeNode();
+    }
+    
     void addWord(string word) {
-        TrieNode* cur = root;
-        for (char c : word) {
-            if (!cur->nexts[c - 'a']) {
-                cur->nexts[c - 'a'] = new TrieNode();
+        TreeNode* cur = root;
+        for (char it : word) {
+            if (!cur->children[it - 'a']) {
+                cur->children[it - 'a'] = new TreeNode();
             }
-            cur = cur->nexts[c - 'a'];
+            cur = cur->children[it - 'a'];
         }
-        cur->isEnd = true;
+        cur->end++;
     }
 
-    bool dfs(string& word, int i, TrieNode* root) {
+    bool dfs(TreeNode* root, string& word, int i) {
+        if (!root) {
+            return false;
+        }
         if (i == word.size()) {
-            return root->isEnd;
+            return root->end > 0;
         }
         if (word[i] == '.') {
-            for (auto next : root->nexts) {
-                if (next && dfs(word, i + 1, next)) {
+            for (TreeNode* child : root->children) {
+                if (dfs(child, word, i + 1)) {
                     return true;
                 }
             }
+            return false;
         } else {
-            TrieNode* next = root->nexts[word[i] - 'a'];
-            if (next) {
-                return dfs(word, i + 1, next);
-            }
+            return dfs(root->children[word[i] - 'a'], word, i + 1);
         }
-        return false;
-    }
-
-    bool search(string word) {
-        return dfs(word, 0, root);
     }
     
+    bool search(string word) {
+        return dfs(root, word, 0);
+    }
 };
 
 /**
