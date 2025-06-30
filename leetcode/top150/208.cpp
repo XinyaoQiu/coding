@@ -3,44 +3,46 @@
 using namespace std;
 
 class Trie {
-    struct TrieNode {
+    struct TreeNode {
         int end;
-        vector<TrieNode*> nexts;
-        TrieNode() : end(0), nexts(26, nullptr) {}
+        vector<TreeNode*> children;
+        TreeNode() : end(0), children(26) {}
     };
-    TrieNode* root;
-  public:
-    Trie() : root(new TrieNode()) {}
-
+    TreeNode* root;
+public:
+    Trie() {
+        root = new TreeNode();
+    }
+    
     void insert(string word) {
-        TrieNode* cur = root;
-        for (char c : word) {
-            if (!cur->nexts[c - 'a']) {
-                cur->nexts[c - 'a'] = new TrieNode();
+        TreeNode* cur = root;
+        for (char it : word) {
+            if (!cur->children[it - 'a']) {
+                cur->children[it - 'a'] = new TreeNode();
             }
-            cur = cur->nexts[c - 'a'];
+            cur = cur->children[it - 'a'];
         }
         cur->end++;
     }
-
+    
     bool search(string word) {
-        TrieNode* cur = root;
-        for (char c : word) {
-            if (!cur->nexts[c - 'a']) {
+        TreeNode* cur = root;
+        for (char it : word) {
+            if (!cur->children[it - 'a']) {
                 return false;
             }
-            cur = cur->nexts[c - 'a'];
+            cur = cur->children[it - 'a'];
         }
         return cur->end > 0;
     }
-
+    
     bool startsWith(string prefix) {
-        TrieNode* cur = root;
-        for (char c : prefix) {
-            if (!cur->nexts[c - 'a']) {
+        TreeNode* cur = root;
+        for (char it : prefix) {
+            if (!cur->children[it - 'a']) {
                 return false;
             }
-            cur = cur->nexts[c - 'a'];
+            cur = cur->children[it - 'a'];
         }
         return true;
     }
