@@ -4,22 +4,22 @@ using namespace std;
 class Solution {
     vector<vector<int>> ans;
     vector<int> path;
-    void dfs(vector<int>& candidates, int currSum, int target, int i) {
-        if (currSum == target) {
+    void dfs(vector<int>& candidates, int target, int i) {
+        if (target == 0) {
             ans.emplace_back(path);
             return;
         }
-        if (currSum < target) {
+        if (target > 0) {
             for (int j = i; j < candidates.size(); ++j) {
                 path.push_back(candidates[j]);
-                dfs(candidates, currSum + candidates[j], target, j);
+                dfs(candidates, target - candidates[j], j);
                 path.pop_back();
             }
         }
     }
 public:
     vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
-        dfs(candidates, 0, target, 0);
+        dfs(candidates, target, 0);
         return ans;
     }
 };
