@@ -49,6 +49,7 @@ public:
         return dfs(root, word, 0);
     }
 };
+
 /**
  * Your WordDictionary object will be instantiated and called as such:
  * WordDictionary* obj = new WordDictionary();
