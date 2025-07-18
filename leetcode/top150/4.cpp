@@ -37,3 +37,4 @@ public:
         return (max(aMax1, aMax2) + min(bMin1, bMin2)) / 2.0;
     }
 };
+
