@@ -16,13 +16,12 @@ class Solution {
             }
         }
         swap(nums[p2++], nums[R]);
-        if (k >= p1 && k < p2) {
-            return nums[k];
-        } else if (k < p1) {
+        if (k < p1) {
             return quickSelect(nums, L, p1 - 1, k);
-        } else {
+        } else if (k >= p2) {
             return quickSelect(nums, p2, R, k);
         }
+        return nums[k];
     }
 public:
     int findKthLargest(vector<int>& nums, int k) {
