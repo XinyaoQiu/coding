@@ -1,5 +1,4 @@
 #include <string>
-#include <vector>
 #include <algorithm>
 using namespace std;
 
@@ -10,7 +9,7 @@ class Solution {
         reverse(b.begin(), b.end());
         string ans;
         int check = 0;
-        for (int i = 0; i < max(a.size(), b.size()); i++) {
+        for (int i = 0; i < max(a.size(), b.size()); ++i) {
             if (i < a.size()) {
                 check += a[i] - '0';
             }
