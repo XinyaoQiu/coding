@@ -1,11 +1,20 @@
-#include<iostream>
+#include <vector>
 using namespace std;
 
-
-int main() {
-    int x;
-    int y;
-    x = 21 >> 2;
-    y = x >>> 2;
-    cout << y << endl;
-}
+class Solution {
+public:
+    int maxArea(vector<int>& height) {
+        int i = 0, j = height.size() - 1;
+        int ans = 0;
+        while (i < j) {
+            if (height[i] < height[j]) {
+                ans = max(ans, (j - i) * height[i]);
+                i++;
+            } else {
+                ans = max(ans, (j - i) * height[j]);
+                j--;
+            }
+        }
+        return ans;
+    }
+};
