@@ -1,36 +1,30 @@
 #include <vector>
+#include <queue>
 using namespace std;
 
 class Solution {
     vector<vector<int>> edges;
-    vector<int> visited;
-    bool valid = true;
-    void dfs(int u) {
-        if (!valid || visited[u] == 1) {
-            valid = false;
-            return;
-        }
-        if (visited[u] == 0) {
-            visited[u] = 1;
-            for (int v : edges[u]) {
-                dfs(v);
-                if (!valid) {
-                    return;
-                }
-            }
-            visited[u] = 2;
-        }
-    }
+    vector<int> indegs;
 public:
     bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {
         edges.resize(numCourses);
-        visited.resize(numCourses);
+        indegs.resize(numCourses);
         for (auto& v : prerequisites) {
             edges[v[1]].push_back(v[0]);
+            ++indegs[v[0]];
         }
-        for (int i = 0; i < numCourses && valid; ++i) {
-            dfs(i);
+        queue<int> q;
+        vector<int> ans;
+        while (!q.empty()) {
+            int u = q.front();
+            q.pop();
+            ans.push_back(u);
+            for (int v : edges[u]) {
+                if (--indegs[v] == 0) {
+                    q.push(v);
+                }
+            }
         }
-        return valid;
+        return ans.size() == numCourses;
     }
 };
