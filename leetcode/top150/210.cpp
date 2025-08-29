@@ -1,41 +1,41 @@
-#include <vector>
 #include <algorithm>
+#include <queue>
+#include <vector>
 using namespace std;
 
 class Solution {
     vector<vector<int>> edges;
-    vector<int> visited;
-    vector<int> ans;
-    bool valid = true;
-    void dfs(int u) {
-        if (!valid || visited[u] == 1) {
-            valid = false;
-            ans.clear();
-            return;
-        }
-        if (visited[u] == 0) {
-            visited[u] = 1;
-            for (int v : edges[u]) {
-                dfs(v);
-                if (!valid) {
-                    return;
-                }
-            }
-            visited[u] = 2;
-            ans.push_back(u);
-        }
-    }
-public:
+    vector<int> indegs;
+
+  public:
     vector<int> findOrder(int numCourses, vector<vector<int>>& prerequisites) {
         edges.resize(numCourses);
-        visited.resize(numCourses);
+        indegs.resize(numCourses);
         for (auto& v : prerequisites) {
             edges[v[1]].push_back(v[0]);
+            ++indegs[v[0]];
         }
-        for (int i = 0; i < numCourses && valid; ++i) {
-            dfs(i);
+        vector<int> ans;
+        queue<int> q;
+        for (int i = 0; i < numCourses; ++i) {
+            if (indegs[i] == 0) {
+                q.push(i);
+            }
         }
-        reverse(ans.begin(), ans.end());
+        while (!q.empty()) {
+            int u = q.front();
+            q.pop();
+            ans.push_back(u);
+            for (int v : edges[u]) {
+                --indegs[v];
+                if (indegs[v] == 0) {
+                    q.push(v);
+                }
+            }
+        }
+        if (ans.size() != numCourses) {
+            return {};
+        }
         return ans;
     }
 };
