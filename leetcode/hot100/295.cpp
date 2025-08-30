@@ -2,44 +2,37 @@
 using namespace std;
 
 class MedianFinder {
-    priority_queue<int> smaller_pq;
-    priority_queue<int, vector<int>, greater<int>> larger_pq;
+    priority_queue<int> pq1;
+    priority_queue<int, vector<int>, greater<int>> pq2;
 public:
     MedianFinder() {
     }
     
     void addNum(int num) {
-        if (smaller_pq.empty()) {
-            smaller_pq.push(num);
-        } else if (larger_pq.empty()) {
-            larger_pq.push(num);
-        } else if (smaller_pq.size() > larger_pq.size()) {
-            if (num < smaller_pq.top()) {
-                larger_pq.push(smaller_pq.top());
-                smaller_pq.pop();
-                smaller_pq.push(num);
-            } else {
-                larger_pq.push(num);
+        if (pq1.empty()) {
+            pq1.push(num);
+            return;
+        }
+        if (num <= pq1.top()) {
+            pq1.push(num);
+            if (pq1.size() > pq2.size() + 1) {
+                pq2.push(pq1.top());
+                pq1.pop();
             }
         } else {
-            if (num > larger_pq.top()) {
-                smaller_pq.push(larger_pq.top());
-                larger_pq.pop();
-                larger_pq.push(num);
-            } else {
-                smaller_pq.push(num);
+            pq2.push(num);
+            if (pq2.size() > pq1.size()) {
+                pq1.push(pq2.top());
+                pq2.pop();
             }
         }
     }
     
     double findMedian() {
-        if (smaller_pq.empty() && larger_pq.empty()) {
-            return 0.0;
+        if (pq1.size() == pq2.size() + 1) {
+            return pq1.top();
         }
-        if (smaller_pq.size() > larger_pq.size()) {
-            return smaller_pq.top();
-        }
-        return (smaller_pq.top() + larger_pq.top()) / 2.0;
+        return (pq1.top() + pq2.top()) / 2.0;
     }
 };
 
