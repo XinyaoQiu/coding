@@ -5,11 +5,10 @@ using namespace std;
 class Solution {
 public:
     int maxSubArray(vector<int>& nums) {
-        int pre = 0, sum = 0, ans = INT_MIN;
+        int curr = 0, ans = INT_MIN;
         for (int n : nums) {
-            sum += n;
-            ans = max(ans, sum - pre);
-            pre = min(pre, sum);
+            curr = max(curr + n, n);
+            ans = max(curr, ans);
         }
         return ans;
     }
