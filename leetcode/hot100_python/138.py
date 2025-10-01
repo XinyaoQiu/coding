@@ -16,13 +16,13 @@ class Solution:
             cur.next = Node(cur.val, cur.next)
             cur = cur.next.next
         cur = head
-        while cur.next:
+        while cur:
             if cur.random:
                 cur.next.random = cur.random.next
             cur = cur.next.next
         new_head = head.next
         cur = head
-        while cur and cur.next:
+        while cur.next:
             tmp = cur.next
             cur.next = cur.next.next
             cur = tmp
