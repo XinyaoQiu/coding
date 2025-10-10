@@ -1,3 +1,4 @@
+from functools import reduce
 from typing import *
 
 class Solution:
@@ -10,4 +11,3 @@ class Solution:
                 ans[j] = i - j
             stk.append(i)
         return ans
-
