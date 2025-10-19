@@ -1,43 +1,38 @@
 from typing import *
+from collections import defaultdict
+from itertools import combinations
 
-# singers = set()
-# ans = {"Role_A": {"Role_B": 1}, "Role_B": {"Role_A": 1, "Role_C": 1}, ...}
-# for each singer:
-# roles = {"Role_A": 2010, "Role_B": 2013}
-# roles_list = list(roles.keys())
-# for i in range(..):
-#      for j in range(i + 1, ..):
-#           if abs <= period:
-#               ans[x][y] += 1
-#               ans[y][x] += 1                
+"""
+input: performences: List[List[str]], period: int
+output: Dict[str, Dict[str, int]]
 
-def cooccurrences(performances: List[List[str]], period: int):
-    singers = {}
-    ans = {}
+singer_roles: {singer: {role: year, ...}, ...}
+cooc: {role: {other_role: count, ...}, ...}
+
+singer_roles.values(): List[Dict[str, int]]
+iterate over
+"""
+
+def cooccurrences(performances: List[List[str]], period: int) -> Dict[str, Optional[Dict[str, int]]]:
+    singer_roles = defaultdict(dict)
+    cooc = defaultdict(lambda: defaultdict(int))
+    all_roles = set()
+
     for singer, role, year in performances:
-        if singer not in singers:
-            singers[singer] = {}
-        if role not in ans:
-            ans[role] = {}
-        singers[singer][role] = int(year)
-    for singer in singers.keys():
-        roles_l = list(singers[singer].keys())
-        for role in roles_l:
-            if role not in ans:
-                ans[role] = {}
-        for i in range(len(roles_l)):
-            for j in range(i + 1, len(roles_l)):
-                x, y = roles_l[i], roles_l[j]
-                if abs(singers[singer][x] - singers[singer][y]) <= period:
-                    if y not in ans[x]:
-                        ans[x][y] = 0
-                    if x not in ans[y]:
-                        ans[y][x] = 0
-                    ans[x][y] += 1
-                    ans[y][x] += 1
-    return ans
+        singer_roles[singer][role] = int(year)
+        all_roles.add(role)
 
+    for roles in singer_roles.values():
+        for x, y in combinations(roles.keys(), 2):
+            if abs(roles[x] - roles[y]) <= period:
+                cooc[x][y] += 1
+                cooc[y][x] += 1
     
+    for role in all_roles:
+        cooc.setdefault(role, None)
+    
+    return {k: dict(v) if isinstance(v, dict) else v for k, v in cooc.items()}
+  
 
 performances1 = [
     ["Alice", "Role_A", "2010"],
