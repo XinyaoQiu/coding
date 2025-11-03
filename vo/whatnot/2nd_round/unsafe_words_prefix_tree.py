@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 UNSAFE_WORDS = [
 'Nintendo',
 'Microsoft',
@@ -31,12 +33,24 @@ messages = [
 # "Nintendo"
 # " Nintendo fdsa"
 
-unsafe_words = set()
+class TrieNode:
+    def __init__(self):
+        self.children = defaultdict(TrieNode)
+        self.end = 0
+
+root = TrieNode()
 for word in UNSAFE_WORDS:
-    unsafe_words.add(word.lower())
-result = []
+    node = root
+    for c in word.lower():
+        node = node.children[c]
+    node.end += 1
+ans = []
 for msg in messages:
-    for word in msg['text'].strip().split():
-        if word.lower() in unsafe_words:
-            result.append(msg['text'])
-print(result)
+    for word in msg['text'].strip().lower().split():
+        node = root
+        for c in word:
+            node = node.children[c]
+        if node.end > 0:
+            ans.append(msg['text'])
+            break
+print(ans)
