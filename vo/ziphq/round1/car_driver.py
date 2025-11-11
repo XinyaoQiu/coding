@@ -6,22 +6,20 @@ def func1(cab: Tuple[int, int], destination: Tuple[int, int], barriers):
     barriers_set = set(barriers)
     dirs = [(0, 1, 'N'), (0, -1, 'S'), (1, 0, 'E'), (-1, 0, 'W')]
     q = deque([(sx, sy, 0)])
-    parents = {} # {(3, 4): (2, 4, 'E')}
-    visited = set([(sx, sy)])
+    parents = {(sx, sy): None} # {(3, 4): (2, 4, 'E')}
     while q:
         for _ in range(len(q)):
             x, y, step = q.popleft()
             if (x, y) == destination:
                 path = ""
                 curr = (x, y)
-                while curr in parents:
+                while curr != cab:
                     path += parents[curr][2]
                     curr = (parents[curr][0], parents[curr][1])
                 return path[::-1], step
             for dx, dy, dir in dirs:
                 nx, ny = x + dx, y + dy
-                if (nx, ny) not in barriers_set and (nx, ny) not in visited:
-                    visited.add((nx, ny))
+                if (nx, ny) not in barriers_set and (nx, ny) not in parents:
                     q.append((nx, ny, step + 1))
                     parents[(nx, ny)] = (x, y, dir)
 
