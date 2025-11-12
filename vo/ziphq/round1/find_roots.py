@@ -9,8 +9,18 @@ def func1(json_str):
     for b in blocks:
         if b['parent'] is not None:
             children[b['parent']].append(b['id'])
-    q = deque(roots)
-    
+    all_paths = []
+    for root in roots:
+        q = deque([root])
+        path = []
+        while q:
+            node = q.popleft()
+            path.append(node)
+            if node in children:
+                for child in children[node]:
+                    q.append(child)
+        all_paths.append(path)
+    return all_paths
     
 
 json_str = '''
@@ -23,4 +33,4 @@ json_str = '''
     {"id": 6, "parent": null}
 ]
 '''
-func1(json_str)
+print(func1(json_str))
