@@ -43,21 +43,27 @@ def parade_at(x, y, t, mp):
 
 def func2(cab: Tuple[int, int], destination: Tuple[int, int], parades: List[Parade]):
     sx, sy = cab
-    tx, ty = destination
     DIR_MAP = {'N': (0, 1), 'S': (0, -1), 'E': (1, 0), 'W': (-1, 0)}
     mp = defaultdict(set)
     for p in parades:
         mp[DIR_MAP[p.dir]].add(p.start)
     q = deque([(sx, sy, 0)])
     visited = set([(sx, sy, 0)])
-    dirs = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+    dirs = [(0, 1, 'N'), (0, -1, 'S'), (1, 0, 'E'), (-1, 0, 'W')]
+    parents = {(sx, sy, 0): None}
     while q:
         x, y, t = q.popleft()
         if parade_at(x, y, t, mp):
             continue
-        if (x, y) == (tx, ty):
-            return t
-        for dx, dy in dirs:
+        if (x, y) == destination:
+            curr = (x, y, t)
+            path = ''
+            while curr != (sx, sy, 0):
+                px, py, pt, dir = parents[curr]
+                path += dir
+                curr = (px, py, pt)
+            return path[::-1], t
+        for dx, dy, dir in dirs:
             nx, ny = x + dx, y + dy
             nt = t + 1
             if parade_at(nx, ny, nt, mp):
@@ -67,6 +73,7 @@ def func2(cab: Tuple[int, int], destination: Tuple[int, int], parades: List[Para
             state = (nx, ny, nt)
             if state not in visited:
                 visited.add(state)
+                parents[state] = (x, y, t, dir)
                 q.append(state)
     return None
 
