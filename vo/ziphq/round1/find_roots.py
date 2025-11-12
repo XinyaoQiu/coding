@@ -5,21 +5,23 @@ def func1(json_str):
     blocks = json.loads(json_str)
     roots = [b['id'] for b in blocks if b['parent'] is None]
     print(roots)
-    children = defaultdict(list)
+    children = defaultdict(list) # {1: [2, 3], 2: [4, 5]}
     for b in blocks:
         if b['parent'] is not None:
             children[b['parent']].append(b['id'])
+    print(dict(children))
     all_paths = []
+    def dfs(root, path):
+        if root not in children:
+            all_paths.append(path.copy())
+            return
+        for child in children[root]:
+            path.append(child)
+            dfs(child, path)
+            path.pop()
     for root in roots:
-        q = deque([root])
-        path = []
-        while q:
-            node = q.popleft()
-            path.append(node)
-            if node in children:
-                for child in children[node]:
-                    q.append(child)
-        all_paths.append(path)
+        path = [root]
+        dfs(root, path)
     return all_paths
     
 
