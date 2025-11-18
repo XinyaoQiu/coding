@@ -7,7 +7,6 @@ class TreeNode:
         self.left = left
         self.right = right
 
-
 def rob(root: Optional[TreeNode]) -> int:
     def dfs(root):
         if not root:
@@ -32,3 +31,6 @@ def func2(roots):
     for root in roots:
         ret += max(dfs(root))
     return ret
+
+root = TreeNode(4, TreeNode(3, TreeNode(100), TreeNode(1)), TreeNode(5, None, TreeNode(1)))
+print(rob(root))
