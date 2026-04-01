@@ -32,4 +32,4 @@ def solution(queries):
         ans.append(max_size())
     return ans
 
-print(solution([1, 4, 2, 5]))
+print(solution([1, 4, 2, 5, 6, 3]))
