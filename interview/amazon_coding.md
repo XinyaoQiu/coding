@@ -33,23 +33,37 @@
 
 ## Problems
 
-<!-- 待用户提供题目后逐题填入。每题模板：
-
-### Q<n>. <Problem Title> (LeetCode <id>)
+### Q1. Validate Binary Search Tree (LeetCode 98)
 
 **Problem**
 
-<statement>
+Given the `root` of a binary tree, determine if it is a valid binary search tree (BST). A valid BST is defined as: the left subtree of a node contains only nodes with keys strictly less than the node's key; the right subtree contains only nodes with keys strictly greater than the node's key; and both subtrees are themselves BSTs.
+
+Example 1: `root = [2,1,3]` returns `true`. Example 2: `root = [5,1,4,null,null,3,6]` returns `false`, because the root is 5 but its right child is 4.
+
+Constraints: number of nodes is in the range one to ten thousand, and each node value fits in a 32-bit signed integer.
 
 **Walkthrough**
 
-<spoken-style English, no formatting / formulas / code>
+So this is a binary tree and I need to check the BST property. First thing I'd clarify is whether duplicates are allowed. Here the rule is strictly less on the left and strictly greater on the right, so equal values are invalid.
+
+The naive idea is, at every node, check that everything in its left subtree is smaller and everything in the right is larger. That works but it's wasteful, because for each node you end up scanning its whole subtree, so it's quadratic in the worst case. And the classic bug people fall into is only comparing a node against its direct parent, which misses violations against deeper ancestors.
+
+The optimal approach is a single top-down pass where I carry a valid range for each node, a lower bound and an upper bound. The root is unbounded. Going left tightens the upper bound down to the current node's value, and going right tightens the lower bound up to it. Each node just has to sit strictly inside the range it was handed, and because the bounds only get tighter going down, this naturally enforces the ancestor constraint. That's one visit per node, so linear time, and the space is the height of the tree from the recursion stack.
+
+One edge detail is that the comparison has to be strict since equal values aren't allowed, and starting the bounds at negative and positive infinity keeps the values at the integer limits from being wrongly rejected.
 
 **Python solution**
 
 ```python
-<code>
+def isValidBST(root):
+    def valid(node, low, high):
+        if not node:
+            return True
+        if not (low < node.val < high):
+            return False
+        return valid(node.left, low, node.val) and valid(node.right, node.val, high)
+    return valid(root, float('-inf'), float('inf'))
 ```
 
 ---
--->
