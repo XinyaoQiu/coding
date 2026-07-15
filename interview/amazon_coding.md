@@ -67,3 +67,91 @@ def isValidBST(root):
 ```
 
 ---
+
+### Q2. Best Time to Buy and Sell Stock II (LeetCode 122)
+
+**Problem**
+
+You are given an integer array `prices` where `prices[i]` is the price of a given stock on the i-th day. On each day you may buy and/or sell the stock, but you can hold at most one share at any time. You may complete as many transactions as you like (you can even buy and sell on the same day). Return the maximum profit you can achieve.
+
+Example 1: `prices = [7,1,5,3,6,4]` returns `7`, buying at 1 and selling at 5, then buying at 3 and selling at 6. Example 2: `prices = [1,2,3,4,5]` returns `4`. Example 3: `prices = [7,6,4,3,1]` returns `0`, since prices only fall.
+
+Constraints: array length from one up to about three times ten to the fourth, and prices from zero up to about ten to the fourth.
+
+**Walkthrough**
+
+So this is the same setup as the classic single-transaction stock problem, but the key difference I'd call out first is that now I can make as many transactions as I want, as long as I only hold one share at a time. So instead of finding one best buy-sell pair, I'm after the total profit over many trades.
+
+A general way to think about it is a state machine: each day I'm either holding a share or not, and I track the best cash I can have in each state, carrying both forward day to day. That's the dynamic programming formulation, linear time with constant space, and it's the one that generalizes to all the harder variants.
+
+But there's a much simpler greedy insight specific to this unlimited version. Because I can buy and sell freely, capturing a multi-day rise from a low to a high gives exactly the same total as summing every individual day-over-day increase along the way. So I don't even need to find the peaks and valleys. I just walk the prices, and every time today is higher than yesterday I add that difference to my profit, and I skip every drop. Single pass, linear time, constant space, and it's the cleanest thing to explain.
+
+The main edge case is a strictly decreasing sequence, where no daily difference is positive, so I add nothing and correctly return zero. There's no double counting, because summing consecutive rises is mathematically identical to buying at each valley and selling at each peak.
+
+**Python solution**
+
+Greedy version (cleanest to present):
+
+```python
+def maxProfit(prices):
+    profit = 0
+    for i in range(1, len(prices)):
+        if prices[i] > prices[i - 1]:
+            profit += prices[i] - prices[i - 1]
+    return profit
+```
+
+State-machine DP version (the general approach):
+
+```python
+def maxProfit(prices):
+    hold, cash = float('-inf'), 0
+    for p in prices:
+        hold = max(hold, cash - p)
+        cash = max(cash, hold + p)
+    return cash
+```
+
+**Follow-up 1 — Handle zero-or-unlimited transactions in one function**
+
+The interviewer may ask to also cover the single-transaction case (buy and sell at most once) with the same code. The state machine is identical; the only difference between the two problems is what money I'm allowed to reuse when I buy: in the unlimited case I can put profit I've already banked back in, so the buy transition draws from my current cash, whereas in the single-transaction case each buy starts fresh from zero. So I gate that one term with a flag. Everything else stays the same linear-time constant-space scan.
+
+```python
+def maxProfit(prices, unlimited=True):
+    hold, cash = float('-inf'), 0
+    for p in prices:
+        base = cash if unlimited else 0
+        hold = max(hold, base - p)
+        cash = max(cash, hold + p)
+    return cash
+```
+
+**Follow-up 2 — Unlimited transactions with a transaction fee (LeetCode 714)**
+
+Now every completed transaction charges a fixed fee. The greedy trick breaks here, because blindly capturing every small daily rise would lose money to the fee each time, so I fall back to the two-state machine. The only change from the unlimited case is that I subtract the fee once per completed transaction, and I do that at the moment I sell. It stays a single linear pass with constant space, and charging the fee only on sell guarantees I pay it exactly once per round trip.
+
+```python
+def maxProfit(prices, fee):
+    hold, cash = float('-inf'), 0
+    for p in prices:
+        hold = max(hold, cash - p)
+        cash = max(cash, hold + p - fee)
+    return cash
+```
+
+**Follow-up 3 — At most k transactions (LeetCode 188)**
+
+The most general version caps the number of transactions at k. I add a dimension for how many transactions I've used, and keep a holding and a not-holding best-cash value for each count from zero to k. A transaction is counted at the buy, so buying into the j-th transaction draws from the cash after finishing j minus one transactions. I sweep every price and, for each transaction count, update the buy and sell values. This is the parent of everything above: k equal to one recovers the single-transaction case, and any k at least half the number of days behaves like the unlimited case. The time is the number of days times k, and the space is proportional to k.
+
+```python
+def maxProfit(prices, k):
+    buy = [float('-inf')] * (k + 1)
+    sell = [0] * (k + 1)
+    for p in prices:
+        for j in range(1, k + 1):
+            buy[j] = max(buy[j], sell[j - 1] - p)
+            sell[j] = max(sell[j], buy[j] + p)
+    return sell[k]
+```
+
+---
