@@ -33,13 +33,25 @@
 >
 > **(Action)** To do that, I traced the whole pipeline end to end — the client, the server, mp-api (our media platform service), and the downstream review teams. The review teams push their results over Kafka into mp-api, which persists the real, final state in the database. On the server side, I made it the single place that turns those internal states into clear, client-facing statuses, so the client never deals with our internal state machine. And I kept it a real-time read: every time the client requests, the server pulls the current state straight from mp-api, with no caching in between, so the state is always live and consistent across devices. I drove this design end to end across both services.
 >
-> **(Result)** After the change, users stopped getting stuck — instead of a video hanging on "processing," the server returns a real "failure" with a reason as soon as review doesn't pass. And because the state lives on the server instead of the device, users see their uploads on any phone they log into. The customer pain behind all those support tickets went away.
->
-> **(Takeaway — closes + ties back to Customer Obsession)** The takeaway for me was that the fix wasn't really about state management — it was about giving users a reliable, honest view of their own uploads.
+> **(Result)** After the change, users stopped getting stuck — instead of a video hanging on "processing," the server returns a real "failure" with a reason as soon as review doesn't pass. And because the state lives on the server instead of the device, users see their uploads on any phone they log into. The support tickets went away — because the real pain was never technical, it was that users couldn't trust what they saw, and now they can.
 
 ---
 
-### Q2. Tell me about a time you had to dig through several layers to find the root cause of a problem. / Tell me about the most complex technical problem you solved.
+### Q2. Tell me about a time you had to balance customer experience against another goal. / a time you pushed back to protect users.
+**LP:** Customer Obsession (trade-off / push-back angle)
+**Story used:** → [Story A — UGC anti-abuse false-positive fix](#story-a--ugc-anti-abuse-false-positive-fix)
+
+> **(Situation)** I built an anti-abuse system for UGC video uploads — a middleware that blocked abusive upload traffic based on patterns like frequency and IP behavior. The goal was to stop bots and script abuse.
+>
+> **(Task)** After it went live, I found it was also catching legitimate traffic from internal scripts — real, valid requests were getting blocked. So I had a tension: the whole point of the system was to block aggressively, but blocking real users was the worse outcome.
+>
+> **(Action)** I made the call to put the user experience first — I'd rather let some abuse through temporarily than block a single legitimate request. So instead of keeping the hard block, I redesigned it into a collect-only mode: it stops blocking at the entry point and just gathers the abuse signals for the downstream team to act on. That was a deliberate trade-off — I gave up immediate blocking to protect legitimate users.
+>
+> **(Result)** False positives went to zero, legitimate traffic flowed normally again, and because the middleware kept collecting signals, the downstream team could still identify and blacklist the real abusers precisely. So we protected real users without giving up on catching abuse — which to me is the whole point: when protecting users conflicts with a system's own goal, the user has to win.
+
+---
+
+### Q3. Tell me about a time you had to dig through several layers to find the root cause of a problem. / Tell me about the most complex technical problem you solved.
 **LP:** Dive Deep (also covers Ownership)
 **Story used:** → [Story B — gas-stations memory-bomb root-cause investigation](#story-b--gas-stations-memory-bomb-root-cause-investigation)
 
@@ -49,13 +61,11 @@
 >
 > **(Action)** I worked it from our metrics dashboards and logs. Several pods were swelling at once — and pods don't die together on their own, so something external was hitting them. When the usual dashboards couldn't pin down what, I brought in flame-graph profiling, and it pointed straight at one endpoint's handler — a gas-stations lookup whose mongo query had no limit, so a request with a huge geographic bounds pulled tens of thousands of documents in one call and blew up the pod. The part I'm most proud of was connecting the rest of the noise to that same cause — the mongo and memcache alerts weren't separate problems, they were healthy pods getting overloaded when traffic shifted off the dying ones. Once I had it, I added a limit and a bounds guard on that query.
 >
-> **(Result)** That fix ended something that had been recurring for over a week — four separate storms that took most of the cluster down. Once the limit went in, it never happened again.
->
-> **(Takeaway — closes + ties back to Dive Deep)** What stuck with me is that the surface almost never points at the root — restarting the pods would've "worked" every time and taught me nothing. The only way to stop it for good was to keep digging until I hit the one line that actually caused it.
+> **(Result)** That fix ended something that had been recurring for over a week — four separate storms that took most of the cluster down. Once the limit went in, it never happened again — because restarting the pods would've "worked" every time, but the only way to stop it for good was to keep digging until I hit the one line that actually caused it.
 
 ---
 
-### Q3. Tell me about a time you took ownership of something outside the scope of your role. / a time you took on something nobody was handling.
+### Q4. Tell me about a time you took ownership of something outside the scope of your role. / a time you took on something nobody was handling.
 **LP:** Ownership
 **Story used:** → [Story D — Tesla scheduler database redesign](#story-d--tesla-scheduler-database-redesign)
 
@@ -71,7 +81,7 @@
 
 ---
 
-### Q4. Tell me about a time you delivered under a tight deadline. / a time you had to push through obstacles to hit a goal.
+### Q5. Tell me about a time you delivered under a tight deadline. / a time you had to push through obstacles to hit a goal.
 **LP:** Deliver Results
 **Story used:** → [Story F — Proto migration delivery](#story-f--proto-migration-delivery)
 
@@ -221,9 +231,9 @@ Deliver a large batch by end of Q2. Tension = fast AND safe (touching live endpo
 ---
 
 ### Story A — UGC anti-abuse false-positive fix
-**LPs covered:** Customer Obsession, Ownership, Invent and Simplify, Earn Trust (cross-team)
+**LPs covered:** Customer Obsession (trade-off / push-back angle), Ownership, Invent and Simplify, Earn Trust (cross-team)
 **When:** April 2026
-**Status:** ⚠️ BACKUP for Q1. Better used for a "failure / lessons learned" question. Has a hidden downside (see note).
+**Used for:** Q2 (Customer Obsession — balance customer vs another goal / push back for users). Also usable for a "failure / lessons learned" question. ⚠️ Has a hidden downside (see caution note below).
 
 **Situation**
 Working on anti-abuse for UGC video uploads. I designed and built a three-layer fail-open middleware to catch abusive upload traffic, flagging based on patterns like upload frequency and IP behavior.
@@ -247,6 +257,11 @@ Block abusers while not hurting legitimate users / internal flows.
 - "How did you find out?" — via log investigation / downstream feedback. If asked, say it in one line and pull back to the fix; don't claim credit for proactive monitoring.
 - How the rule triggered: upload frequency + IP patterns; internal scripts were high-frequency so they hit the rule. One line, don't expand into three-layer detail.
 - ⚠️ Internally this "false positive" was logged as a lapse (didn't check logs promptly after launch). Telling it from a positive angle is fine, but do NOT dress up "found it passively afterward" as "I caught it via proactive real-time monitoring" — it breaks under deep questioning.
+
+**Takeaway options** (Customer Obsession, trade-off angle — pick per wording; default is the first):
+1. (default) "What stuck with me was that when protecting users conflicts with a system's own goal, the user has to win — a false positive on a real user costs more than letting some abuse slip through for a bit."
+2. (push-back framing) "I learned to push back even against my own system — the anti-abuse tool existed to block, but not at the cost of blocking real users."
+3. (short) "A false positive on a real user is more expensive than a false negative on a bot."
 
 ---
 
