@@ -75,9 +75,7 @@
 >
 > **(Action)** I researched it end to end and wrote the technical plan myself. The hard part was doing it without disrupting the engineers using it live, so I designed an online migration instead of taking the tool down. I stood up the new schema, backfilled the historical data, and kept the old and new databases in sync both ways through the cutover, so I could roll back at any point. I updated the backend, validated everything in a test environment first, then watched it in production for a full week before retiring the old database.
 >
-> **(Result)** The redesign cut query latency and shrank the footprint significantly, so the same database could hold far more data going forward — all with zero disruption to the engineers using the tool.
->
-> **(Takeaway — closes + ties back to Ownership; swap per wording, see Story D options)** What stuck with me was that no one told me to fix it, and the person who built it was gone — I could've just kept it running. But I treated it as mine, and that's really what ownership means to me.
+> **(Result)** The redesign cut query latency and shrank the footprint significantly, so the same database could hold far more data going forward — all with zero disruption to the engineers using it. And no one had asked me to do any of it; the person who built it was gone and I could've just kept it running, but I treated it as mine.
 
 ---
 
