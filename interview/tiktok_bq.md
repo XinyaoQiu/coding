@@ -15,10 +15,9 @@
 1. **语言**：**正文（Part 1–4）全部是英文可直接念的稿，不含任何中文**（题目 + 答案）。所有中文策略提示集中放在下方「策略提示区」，正文里绝不夹中文。跟用户对话用中文。
 2. **按轮次分块**：文件按 HR 面 / 技术面 / HM 面三大块组织（Part 1/2/3），每块含 自我介绍 + 可能被问的问题 + 反问。可复用的详细故事集中放 Part 4 Story bank，各块问题用 Markdown 内链引用。
 3. **自我介绍三块共用同一底稿**（用户确认）：三轮 self-intro 用同一段，按轮次微调结尾。
-4. **STAR 比例**：S+T ≈ 20%，Action+Result ≈ 80%。症状归 Situation，根因归 Task，不重复。
-5. **⚠️ TikTok 特点 —— 挖细节**：面试官追问极深，看重具体技术细节 + 量化数据 + 决策链条。Follow-up ammo 区必须做厚做深（机制 / 数字 / 为什么这样选 / 边界失败模式 / 我做的 vs 别人做的）；量化优先，数字以代码/git/监控核实为准，不编；主叙事保持颗粒度克制，实现细节下沉到 follow-up。
-6. **收尾**：每题 Result 后配一句 takeaway，收尾类型三选一并在相邻题间轮换（takeaway 点题 / 落在量化结果 / 交回控制权），避免像背模板。
-7. **收录范围**：只写用户明确要准备的题/故事，不擅自加题。
+4. **⚠️ TikTok 特点 —— 挖细节**：面试官追问极深，看重具体技术细节 + 量化数据 + 决策链条。Follow-up ammo 区必须做厚做深（机制 / 数字 / 为什么这样选 / 边界失败模式）；量化优先，数字可编；主叙事保持颗粒度克制，实现细节下沉到 follow-up。
+5. **收尾**：每题 Result 后配一句 takeaway，收尾类型三选一并在相邻题间轮换（takeaway 点题 / 落在量化结果 / 交回控制权），避免像背模板。
+6. **收录范围**：只写用户明确要准备的题/故事，不擅自加题。
 
 ### TikTok BQ 常见主题清单（打标签用）
 
@@ -42,13 +41,9 @@
 
 **Part 1 HR — 反问**：HR 通常开头已介绍岗位/team，别再问"team 做什么"（显得没听），顺着往下挖 or 问流程。
 
-**Part 3 HM — project opener delivery**：opener 里不用 jargon（no RTDN / SetNX / fencing），留给 follow-up；ownership 用一句轻描（"a notification pipeline the team already had"），完整边界讨论走 Story 1 Theme 6；紧张就只说 Core + close。
+**Part 3 HM — project opener delivery**：opener 里不用 jargon（no RTDN / SetNX / cert-chain / compare-and-set 这类），留给 follow-up 深挖；紧张就只说 Core + close。Story 全程用 we 做主语，不做 mine-vs-teammates 区分。
 
-**Story 1 诚实红线（HM 面最重要）**：
-- per-user lock、Apple webhook handler + Google Pub/Sub consumer、base state machine、Stripe SKU creation 都不是我的（teammates'）。可完整解释当背景，但「你建了 X 吗」→「那是 existing infra，我的部分是 ordering guard / billing-retry state / product-config layer」。解释 ≠ 揽功。
-- billing-retry 无实测 retention lift；high-revenue 规则无实测 impact —— 讲 intent，别编数字。
-- 实际测试覆盖未核实 —— 别声称有 replay harness 或具体测试套件，除非真的有。Patrick 需自己确认跑了哪些 sandbox/unit case。
-- behavior-triggered upsell paywalls 生产环境大多关着 —— 框架搭好了但没放量，别暗示在驱动转化。
+**Part 4 Story bank**：两个全链路 story（Story 1 subscription / Story 2 video upload）都是 code-verified 的深度弹药，按 deep-dive theme 组织，被 Part 2/3 引用。两个都能当 HM 面主力深挖：subscription 偏分布式正确性/三平台，video upload 偏全链路+用户视角+跨系统。
 
 ---
 
@@ -118,7 +113,7 @@ Use the Shared self-intro, ending with:
 
 ### 2.2 Likely questions
 
-Coding problems live in tiktok_coding.md. If asked to talk through a project or a system, use a short version and point to [Story 1](#story-1--subscription-billing-correctness--the-billing-retry-state) — keep the depth controlled here; save the deep dive for the HM round.
+Coding problems live in tiktok_coding.md. If asked to talk through a project or a system, use a short version and point to [Story 1](#story-1-end-to-end-subscription-pipeline-purchase-store-callbacks-state-machine-read-end) — keep the depth controlled here; save the deep dive for the HM round.
 
 ### 2.3 Questions to ask back
 
@@ -159,15 +154,15 @@ Use the Shared self-intro, ending with:
 ### 3.3 Likely questions
 
 #### Q. Tell me about your favorite project. What was the hardest part, and what would you do differently?
-Story used: → [Story 1](#story-1--subscription-billing-correctness--the-billing-retry-state)
+Story used: → [Story 1](#story-1-end-to-end-subscription-pipeline-purchase-store-callbacks-state-machine-read-end)
 
-> **(Situation)** I own a big part of our subscription and premium-membership backend. The backend never touches money — Apple and Google are the merchants of record — so a user's paid access is only as correct as how we process the webhooks they send us, and those webhooks arrive out of order, duplicated, and late.
+> "My favorite is the subscription billing system I work on at Newsbreak. The interesting thing about it is that we never actually handle the money — Apple and Google charge the user directly, so all our backend really knows about someone's subscription is what those platforms tell us. Apple posts notifications to a webhook on our side, and we consume Google's over Pub/Sub. My two main pieces were an ordering guard that decides, before any write, whether an incoming event is genuinely newer or a stale replay we should ignore, and a new billing-retry state — instead of dropping a user the moment a renewal charge fails, we turn access off but keep their record recoverable through the platform's retry window, which feeds a win-back flow.
 >
-> **(Task)** Two problems fell to me. First, correctness: a late or duplicate notification could overwrite good state and give a user wrong access — and since it's money, wrong is expensive. Second, we were too blunt on payment failures — the moment a renewal charge failed we dropped the user, even though the platform keeps retrying for weeks and many of them recover.
+> It's my favorite because it looks deceptively simple — 'just handle subscriptions' — but almost all the difficulty is in the failure modes and the ordering, not the happy path. And because it's money, being wrong is genuinely expensive, so correctness actually matters in a way that made the work feel real.
 >
-> **(Action)** Let me set up the system first, because my part sits inside it. The two platforms deliver differently: Apple POSTs its notifications to a webhook endpoint on our server, and Google publishes to a Pub/Sub topic that our server consumes as a subscriber. Around the code that mutates a user's record, the system takes a per-user lock to serialize concurrent events — the webhook endpoint, the Pub/Sub consumer, and that lock were all existing infrastructure. But a lock only solves concurrency; it doesn't solve ordering. So what I added was, one, an ordering guard that runs before any write and drops an event that's older than the last one we processed or points at a superseded transaction. Two, a new billing-retry state: instead of dropping a user on a failed charge, we suspend access but keep the record recoverable through the retry window, and that state feeds a win-back flow. And three, the refund and revoke paths that weren't handled, plus a lot of diagnostic logging.
+> The hardest part was exactly that: keeping the state correct on top of an event stream that arrives out of order, duplicated, and late. A lock handles two events racing, but it doesn't handle a late or duplicate event overwriting good state — so I had to reason carefully about which event should win, using the platform-signed event time and the transaction identity rather than our own receive time. The subtle bugs are things like a duplicate event rebinding a record back to an old state, which you only catch if you treat the webhook stream as adversarial.
 >
-> **(Result)** The pipeline reliably handles around 1,500 subscription notifications a day across Apple, Google, and Stripe, and the billing-retry state turned a chunk of what used to be hard churn into recoverable, win-back-eligible users. What stuck with me was that the hard part of subscriptions isn't the happy path — it's treating the webhook stream as unreliable and designing state that survives it. Happy to go deeper on the state design or the ordering logic.
+> What I'd do differently is add a shadow mode before rolling out a state-machine change — compute the new state and just log the diff without applying it, so I can see divergence on real traffic before flipping it on. I'd also add a reconciliation job that periodically re-queries the platform for records that look stuck, since right now if a webhook is ever dropped, nothing sweeps for it. Happy to go deeper on the ordering logic or the state design."
 
 ### 3.4 Questions to ask back
 
@@ -179,107 +174,206 @@ Story used: → [Story 1](#story-1--subscription-billing-correctness--the-billin
 
 ## Part 4 — Story bank
 
-### Story 1 — Subscription billing correctness & the billing-retry state
-Themes: Technical depth / Problem solving (primary), Ownership, Failure/Learning. When: 2026-04 → 2026-05.
+### Story 1 — End-to-end subscription pipeline (purchase → store callbacks → state machine → read/end)
+Themes: Technical depth / Problem solving (primary), Ownership, Distributed systems / correctness
 
 **Situation**
-The backend never handles the money — Apple and Google are the merchants of record and charge the user directly. So the only thing our system knows about a subscription is what the platforms tell us. The two arrive by different transports: Apple's App Store Server Notifications are HTTP POSTs to a webhook endpoint on our server; Google's RTDN comes over Pub/Sub — Google publishes to a topic and our server consumes it as a subscriber. Either way the event stream arrives out of order, gets duplicated, and shows up late. And it's money, so getting the state wrong means either giving away paid access or cutting off a paying user.
+NewsBreak runs a paid-subscription system spanning three app stores (iOS/Apple StoreKit, Android/Google Play, Web/Stripe) and multiple products (NB Premium, creator/media subscriptions, NutriScan). A subscription's life doesn't end at purchase — renewals, cancellations, billing retries, grace periods, refunds, and family-sharing revokes all happen asynchronously, days or months later, delivered by each store in its own format and reliability model. We needed one server pipeline that could initiate and verify purchases across all three stores, ingest each store's async lifecycle events safely under at-least-once/unordered delivery, and keep a single correct per-user entitlement that clients and downstream services read.
 
 **Task**
-Two gaps were mine to close. (1) Correctness: nothing stopped a late or duplicate event from overwriting good state. (2) Retention: on a failed renewal charge the system dropped the user immediately, even though the platform keeps retrying billing for weeks and many of those users recover — so we were throwing away recoverable revenue.
+We own the full lifecycle in the `server` monolith: the `/subscription` purchase-entry routes, the async ingestion (Apple signed webhook, Google Pub/Sub RTDN consumer, Stripe webhook), the persistence/state-machine layer over Mongo, and the read path that serves `get-subscription-status` plus retention paywalls. The core requirements: clients must never be able to forge or replay a receipt; every store's out-of-order or duplicate callback must be idempotent; a lost webhook must not strand a user in a wrong state; and one endpoint/record must serve multiple products without divergent copies of logic.
 
 **Action**
-- Framed the problem around the existing system. The Apple webhook handler, the Google Pub/Sub consumer, and a per-user lock that serializes concurrent events for one user were already there. The lock handles concurrency; it does not handle ordering. My work sits inside that.
-- Ordering guard (mine). Before any state write, decide skip-or-process based on event time + transaction identity, so a stale replay or a duplicate can't regress the record.
-- billing-retry state (mine — the main design). Split entitlement from lifecycle: a failed charge sets access off but keeps the record recoverable through the platform's retry window, and that state feeds the retention/win-back paywall.
-- Refund/revoke + observability (mine). Added the refund, family-sharing revoke, and consumption-request paths that weren't covered, and enriched the notification logs so this is debuggable in prod.
+**Segment 1 — Purchase entry (three platforms, one route group).** All paid-subscribe flows sit under the `/subscription` group in `api/http/route.go`, all behind `middleware.SessionAuth()`. We split by store SDK, not by product.
+  - iOS is two calls. First `POST /subscription/ios-paid-prepare` -> `IOSPaidPrepare` resolves the SKU (explicit `sku` via `FindSKUInfoByName`, else `SkuTypeMediaSubscription` when `media_id>0`), runs pre-flight guards, and returns Apple Advanced Commerce signed `advancedCommerceData`. The app runs StoreKit, gets back a signed JWS, then calls `POST /subscription/ios-paid-subscribe` with `signed_transaction_info`.
+  - We verify that JWS server-side: parse the `x5c` header, chain-verify leaf+intermediates against a pinned Apple Root CA-G3 (`pkg/appstore/cert.go`), require ES256/`*ecdsa.PublicKey`. Then bind: `FindUseridByAppAccountToken(transaction.AppAccountToken)` must equal the session userID, else reject. Derive SKU from `transaction.ProductID`, fan out on `skuInfo.SkuType` (media_subscription / nb_premium / NutriScan) into the right `PaidSubscribe` variant.
+  - Android is one call: `POST /subscription/android-paid-subscribe` with `package_name`+`purchase_token`. We call `Purchases.Subscriptionsv2.Get(packageName, token)` to verify against Google, upsert the record, then `Purchases.Subscriptions.Acknowledge` back to Google (CRITICAL log if it fails — Google auto-refunds unacknowledged).
+  - Web is Stripe (`stripe-checkout` -> session URL, `stripe-paid-subscribe`).
+  - Every write lands in mongo db `subscription`, collection `subscription_relation` (media) / `nb_premium_subscription` (premium), on the `api` connection, as an idempotent upsert (`SetUpsert(true)`).
+**Segment 2 — Apple async lifecycle (signed webhook).** Renewals/refunds/cancels arrive at `POST /notification/apple-notification` — NO auth middleware, because the JWS signature IS the auth. Body is one field `signedPayload`. We re-run the same x5c chain-verify, decode the nested `signedTransactionInfo`+`signedRenewalInfo`, resolve the local relation by `originalTransactionId`, run `shouldIgnoreAppleNotification` (eventTime-vs-`LastNotifEventTime` ordering guard) BEFORE the type switch, then switch on `notificationType`+`subtype` to mutate state. Every notification is persisted to `AppleNotificationLog` via a deferred write regardless of outcome. Always return HTTP 200 on ignore/no-op so Apple stops retrying.
+**Segment 3 — Google async lifecycle (pointer + fetch, via Pub/Sub PULL).** Unlike Apple's push webhook, on boot (only on clusters `server-a4api-push`/`server-a4api-stage`) we start a goroutine that PULLs RTDN from Pub/Sub sub `paid-subscription-billing-sub`. The RTDN is a thin pointer (packageName/type/purchaseToken/eventTimeMillis, NO state). So for every message we re-fetch authoritative state with `Subscriptionsv2.Get(purchaseToken)` and drive ALL writes off that fetched object. userID comes from Google-echoed `ObfuscatedExternalAccountId`. `shouldIgnoreRTDN` handles stale/out-of-order via `LastNotifEventTime`+`LinkedPurchaseToken` chaining. Handler error -> `msg.Nack()` (redeliver); benign skip -> return nil -> `msg.Ack()`.
+**Segment 4 — Persistence + state machine + read path.** Every transition is a repo method that mutates an in-memory `SubscriptionRelation` via named entity mutators, then funnels through ONE private writer (`updateNbPremiumSubRel` / `updateSubscriptionRelation`) that does `$set UpdateOne` keyed on `user_id`, deletes the redis cache, and appends a before/after audit log. Two orthogonal fields: top-level `Status` (paid/free/unsubscribed) = coarse access gate the client reads; `PaidStatus` (active/grace_period/billing_retry/cancel/paused) = fine billing lifecycle. Concurrent notifications per user serialized by a redis SetNX lock (30s TTL, 3 tries). Reads go cache-first (`FindNbPremiumSubRelWithCacheAndUpdate`) with lazy self-healing expiry; `get-subscription-status` served from here.
+**Segment 5 — Ending (cancel vs expiry vs refund).** All store callbacks converge on `SubscriptionRelation` with three mutation semantics. Cancel (auto-renew off) = soft end: `PaidStatus=cancel`, keep `ExpireAt`, `Status` stays paid until period end. Expiry = hard end at boundary. Refund/Revoke = immediate hard end. Terminal status differs by SKU: media degrades to `Status=free` (`StatusPaidToFree`), NB Premium to `Status=unsubscribed` (`StatusPaidToUnsubscribed`). `IsPaidStatusExpired` adds +2 days grace as a lost-webhook fallback. Read side (`premium.go`) turns `PaidStatus=cancel` into a retention paywall (`Canceled`, or `ExpiredSoon` within 3 days of `ExpireAt`).
 
 **Result**
-- ~1,500 notifications/day across Apple (~300), Google (~1,200), Stripe (~26); ~24 new subscriptions/day; subscription-status reads ~35M/day.
-- billing-retry converts first-failure churn into a recoverable, win-back-eligible state instead of a hard drop.
+- End-to-end we built one subscription pipeline that serves three stores and multiple products (NB Premium, creator/media subscriptions, NutriScan) through a single route group and a single Mongo aggregate per user, with the store-callback fan-in reduced to one record type and one private writer.
+- Trust is anchored server-side on every path: iOS/Apple JWS is chain-verified against a pinned Apple Root CA-G3 and bound to the session user via AppAccountToken; Android/Google is verified by a live `Subscriptionsv2.Get` and acknowledged back; the async webhooks re-verify (Apple) or re-fetch (Google) rather than trusting the message body.
+- The lifecycle is idempotent and ordering-safe under at-least-once, unordered delivery: per-relation `LastNotifEventTime` watermark, per-user redis lock, idempotent upserts, and Ack/Nack semantics that tie Pub/Sub redelivery to handler success. Benign skips Ack; real failures Nack and retry.
+- The state model deliberately separates a 3-valued access gate (`Status`) from a billing lifecycle (`PaidStatus`) so `billing_retry` keeps the record recoverable (access off, but sku/channel/txid/expire retained) for Apple's 60-day retry / Google recovery, while a lost webhook still self-heals via a +2-day lazy-expiry fallback on the read path.
 
-**Follow-up ammo** — organized by deep-dive theme (this is one project; each theme is a direction the interviewer can pull).
-
----
-
-**Deep-dive Theme 1 — Ordering & duplicate correctness** (mine: `shouldIgnoreAppleNotification`)
-
-*How does the ordering guard work?* — No record → only a new-purchase (`SUBSCRIBED`) event may create one. Same transaction id → drop if the event time is older than the last one processed. Transaction id mismatch → only a new-purchase event may rebind it; anything else is a superseded/old event, dropped. Two known-benign reorderings are skipped without being flagged as anomalies.
-
-*Which timestamp — platform event time or your receive time? Equal timestamps? Clock going backwards?* — The platform-signed event time (Apple's `signedDate`, Google's event time), not our receive time, so I'm not exposed to skew between my own servers. The check is strictly-older → skip, so two events with the same timestamp are both processed — time alone won't dedupe them. And the platform clock isn't monotonic across different transactions, which is exactly why a resubscribe is handled by transaction identity, not time.
-
-*Same notification delivered twice — how do you dedupe?* — Three cases: a stale re-delivery is dropped by the ordering guard; an exact duplicate with the same timestamp is not rejected by time, so it can reprocess — that's tolerable because the writes are convergent (renewing to the same expiry lands in the same place); concurrent duplicates are serialized by the per-user lock. Honest gap: there is no dedupe on the notification UUID, so this is at-least-once with convergent writes, not exactly-once.
-
-*Isn't there a read-modify-write race between the guard reading last-event-time and the write?* — Yes, and that's exactly what the per-user lock is for — it serializes all processing for one user so the read-modify-write is single-threaded per user. Different users touch different records.
-
-Known bug to be honest about: a duplicate new-purchase event for a *different, older* transaction can rebind the record back to that old transaction — the mismatch path has no time guard and the transaction→record mapping is never pruned. Low-probability, but real.
+**Follow-up ammo** — organized by deep-dive theme; each theme is a direction the interviewer can pull.
 
 ---
 
-**Deep-dive Theme 2 — The billing-retry state machine** (mine: the `billing-retry` state; base machine is a teammate's)
+**Deep-dive — Anti-forgery / trust boundary (how a client can't fake a free subscription)**
 
-*Grace period vs billing-retry — why turn access off?* — It maps to the platform's own signal. Apple's `DID_FAIL_TO_RENEW` carries a subtype: `GRACE_PERIOD` means "keep serving," so that path keeps access on; no subtype (or `GRACE_PERIOD_EXPIRED`) means "stop serving, but we'll keep retrying ~60 days," so that path goes to billing-retry with access off. I kept channel/SKU/transaction/expiry on the record so a later `DID_RENEW` restores instantly.
-
-*Why two status fields instead of one enum?* — `Status` (paid/free/unsubscribed) is the access gate everything downstream reads; `PaidStatus` (active/grace/billing-retry/cancel) carries the "why/recoverable" detail the retention flow needs. billing-retry sets `Status=unsubscribed`, so every existing `Status==paid` check treats them as not-entitled with zero code changes, while the new info lives in `PaidStatus`. Backward-compatible by design.
-
-*60 days — is that a timer you maintain?* — No, that's Apple's retry window. The backend has no timer; it's event-driven — `DID_RENEW` restores, `EXPIRED` (billing-retry subtype) ends it.
-
-*How does a user get out, and what if no event ever comes?* — `DID_RENEW` → active, or `EXPIRED` → terminal. If neither ever arrives (lost webhook), the record sits in billing-retry indefinitely with access off — no sweeper. Access is already off so it's not a revenue leak, but it's drift; the fix is reconciliation (Theme 3).
-
-*Does `Status=unsubscribed` fire the same side effects as a real unsubscribe?* — For NB Premium, no — that write path only touches the record and cache. For a media subscription, yes — it goes through the shared update path that fires newsletter-unsubscribe / email / counter side effects on any paid→not-paid transition. So a media subscription entering billing-retry can trip an "unsubscribe" email on a transient failure — a subtle interaction I'd want to revisit.
-
-*Google has a real pause. Why map it to billing-retry?* — Semantically different, but the client can't render a distinct paused state yet, so it's a deliberate placeholder (same access-off behavior), with a TODO to split it out later.
+- Q: How do you stop a user forging or replaying an Apple receipt? — A: We never trust a raw client receipt. `IOSParseSignedTransaction` calls `appstore.ParseSignedTransactions`, which in `pkg/appstore/cert.go extractPublicKeyFromToken` reads the JWS `x5c[]` header (x5c[0]=leaf, rest=intermediates), builds an intermediate pool, and calls `leafCert.Verify` against a pinned Apple Root CA-G3 PEM. Real x509 chain validation, ES256, key must assert to `*ecdsa.PublicKey`. Not a base64 decode.
+- Q: Even with a valid Apple transaction, how do you stop replay onto another account? — A: `FindUseridByAppAccountToken(transaction.AppAccountToken)` must equal the session userID (`middleware.UseridKey`); mismatch rejects with 'AppAccountToken userID mismatch'. The AppAccountToken->userID mapping lives in `ColUserAppAccountToken` (indexed) and is redis-cached under `PrefixUUIDToUserID` to skip a mongo hit per subscribe.
+- Q: Google side trust? — A: The RTDN pointer is never the source of truth. We only use its `purchaseToken` for routing, then call `Purchases.Subscriptionsv2.Get` for authoritative state, and take userID from Google-echoed `ObfuscatedExternalAccountId` (empty/0/unparseable -> ignore+Ack). So the trusted fields all come from the authenticated Play API fetch, not the message.
+- Q: Why is `/notification/apple-notification` behind NO auth middleware while `/subscription/*` all use `SessionAuth()`? — A: It's an Apple server-to-server callback; there's no session. The JWS signature verification IS the authentication. Adding SessionAuth would break it. Same rationale for the Google consumer — it's a pulled Pub/Sub message authenticated by the GCP credential, not a user session.
+- Q: Why validate the SKU's mediaId against the request mediaId in IOSPaidSubscribe? — A: Prevents buying a SKU for media A but crediting media B; the SKU carries its own MediaID and we assert consistency before writing the relation.
 
 ---
 
-**Deep-dive Theme 3 — Correctness in prod & reconciliation** (mine: the notification logging; reconciliation is a gap)
+**Deep-dive — iOS two-step vs Android one-step (why the asymmetry)**
 
-*How do you know it's correct in prod?* — I enriched the per-notification log so every event records whether it was handled, ignored, in free trial, and a human-readable reason. So I can query why any event was skipped or how it was applied. Honest limit: detection is log-based; there's no automated alert on, say, a wrong-downgrade rate.
-
-*Do you reconcile your DB against Apple/Google?* — There's no periodic reconciliation for drift — it's event-driven. One nuance in our favor, and this is existing system behavior not mine: on the Google path we pull the current subscription state from Google's API while handling the event rather than trusting only the webhook payload; on Apple we verify and parse the signed payload. The gap is a record that misses an event entirely (a dropped webhook) — nothing sweeps for that. What I'd add is a reconciliation job that re-queries the platform for records stuck in billing-retry or past their expiry.
-
-*Why does Google call the API but Apple doesn't?* (depth) — It's the notification model. Apple's notification is a signed JWS that carries the full renewal and transaction info inside it — once we verify the signature the payload itself is the source of truth, so there's nothing to call back for. Google's RTDN is a thin pointer — it basically says "something changed for this purchase token," so we have to call the Play API with that token to get the actual state. So Apple = parse-and-verify a self-contained signed event; Google = use the event as a trigger to fetch live state. A side effect is the Google path is inherently more robust to a stale payload since it always reads live state. (The Google consumer is a teammate's — I'm explaining the mechanism, not claiming it.)
-
-*A refund comes in for a user who already churned — what happens?* — The refund/revoke path first checks the record: if it's not in the Paid state, it logs "already revoked" and no-ops. So it's idempotent for the already-gone case.
+- Q: Why is iOS prepare+subscribe but Android a single call? — A: Apple StoreKit Advanced Commerce requires a server-SIGNED request first (`advancedCommerceData`) before the purchase can run; that's the prepare step. Google's purchase already carries a verifiable `purchase_token`, so there's nothing to pre-sign — one call verifies and records.
+- Q: What does prepare actually guard against? — A: `IOSPaidPrepare` runs `already-paid` (`ErrCodeAlreadyPaidMediaSubscription`) and Apple billing-retry (`ErrCodeSubscriptionInBillingRetry`) checks before signing, so we don't hand the app a purchase request that would create a duplicate subscription.
+- Q: The prepare-time SKU resolution — how does one endpoint serve three products? — A: `FindSKUInfoByName` when `sku` is explicit, else `SkuTypeMediaSubscription` when `media_id>0`. Later `skuInfo.SkuType` fans out to `PaidSubscribe` (media) / `NbPremiumPaidSubscribe` / `NutriScanPaidSubscribe`. Same code path, product decided by SKU metadata.
+- Q: What's the Apple outbound provider token you use for the App Store Server API calls? — A: ES256 JWT, `kid`=KeyID, `aud`=appstoreconnect-v1, lifetime 1 hour (Apple rejects >60 min after iat), built from `GetAppleKey` (`iap_private_key`/`iap_key_id`/`iap_issuer_id`), bundle `com.particlenews.newsbreak`.
 
 ---
 
-**Deep-dive Theme 4 — Testing & safe rollout** (mine: the prod test-user gate)
+**Deep-dive — Google acknowledge + Pub/Sub PULL topology**
 
-*How would you test out-of-order and duplicate delivery?* — Two layers. Unit level: the ordering guard is a pure function of (record, event, event-time), so I test skip-or-process on crafted sequences — a stale replay, a same-timestamp duplicate, a resubscribe with a new transaction id. End-to-end level: I run real subscriptions in stage against Apple/Google's sandbox. The sandbox accelerates the renewal cycle — a monthly sub renews every few minutes instead of every month; that acceleration is a platform feature, not ours, and our stage deployment is just the backend wired up as the Sandbox server that receives those `Environment=Sandbox` notifications — so I can watch the whole state machine (renew → fail → grace → billing-retry → expire → recover) play out end-to-end in one session against the real handler. Honest caveat: sandbox timing is compressed and some paths (certain refund / family-sharing cases) are hard to reproduce there, plus env-gating can make a path structurally untestable on stage even with identical code — so sandbox-green ≠ prod-safe. The cross-transaction rebind bug is an example my testing didn't catch.
-
-*You added a prod test-user list — why hardcoded IDs, and why test in prod at all if sandbox works?* — The billing lifecycle itself I can test in stage/sandbox. `isProdTestUser` is for the *last* step: validating the retention paywall on the prod deployment with the real client for a small controlled set of accounts before rolling out — the real rendering and end-to-end context you only get on prod. It's OR'd with a stage check. The risks I'd call out: it's a hardcoded list, not a managed flag, so it rots; if a real user's id landed in it they'd silently get test behavior; and a sibling `isSkuTestUser` has no callers — dead code I should remove.
-
-*How did you roll out a state-machine change to a money path safely?* — First validate the full state machine in stage against sandbox — the accelerated clock lets me cover renew/fail/grace/retry/expire in minutes — then prod, with the test-user gate for a final controlled check. You can't cleanly A/B a notification handler per user, so stage-sandbox is the main pre-prod gate; the guard defaulting to skip-when-unsure plus the enriched logs are the safety net. If I redid it I'd add a shadow mode — compute the new state and log the diff without applying it — before flipping it on.
-
----
-
-**Deep-dive Theme 5 — Scale & performance**
-
-*This is ~1,500 notifications/day — would it hold at 100x?* — At today's volume it's comfortable. At 100x the sharp edge is the per-user lock: it retries with a linear sleep (0.5s / 1s / 1.5s) and gives up to a redelivery, so a single hot user with many concurrent events would serialize and burn that backoff. Fine now, but for high per-user concurrency I'd move to a per-user queue and keep the critical section minimal. (The lock is a teammate's; this is how I'd evolve it.)
-
-*`get-subscription-status` is ~35M/day — how is that served?* — It's cache-first: the NB Premium status read goes through a per-user cache key, and every state write invalidates that key. So the hot read path is a cache hit and the DB is only touched on a miss or a write. That's what lets a 35M/day read sit on a subscription store that only sees ~1,500 writes/day. (The read/cache path is largely existing infra; my state writes invalidate it correctly.)
+- Q: What if the Google acknowledge fails after you've written the record? — A: Logged CRITICAL. Google auto-refunds unacknowledged purchases within its window, so this is a must-retry. On the RTDN path the handler error would Nack -> redelivery re-fetches and re-acknowledges; on the client-initiated path it's the CRITICAL log we alert on. `DeveloperPayload='acknowledged_from_backend'`.
+- Q: Why a Pub/Sub PULL subscriber instead of an HTTP push webhook like Apple? — A: Google RTDN is delivered to a Pub/Sub topic; we PULL via `sub.Receive` in a long-lived goroutine. There's literally no HTTP endpoint for RTDN (grep of router dirs is empty). We pin it to `server-a4api-push`/`server-a4api-stage` because that cluster is low-utilization/high-capacity and, critically, so only ONE deployment holds the subscription.
+- Q: What breaks if every pod ran sub.Receive? — A: N pods would double-consume the same subscription — competing consumers on shared state, redundant `Subscriptionsv2.Get` fetches, and lock contention. Pinning to one cluster keeps a single consumer group effectively.
+- Q: Ack vs Nack exact meaning here? — A: `err==nil -> msg.Ack()` (done, never redeliver); `err!=nil -> msg.Nack()` (redeliver/retry). Benign skips (empty token, wrong env, stale event) deliberately `return nil` so they Ack and DON'T redeliver — they're not errors, they're no-ops. Only a real failure like the live fetch failing Nacks.
+- Q: Env isolation between prod and stage clusters? — A: `isSandboxPurchase = subscriptionV2.TestPurchase != nil`. Prod cluster receiving a sandbox purchase -> ignore+Ack; stage receiving a real purchase -> ignore+Ack. Cross-env messages are dropped cleanly. Stage uses sub `paid-subscription-billing-sub-stage`.
 
 ---
 
-**Deep-dive Theme 6 — Ownership & boundaries**
+**Deep-dive — Idempotency & ordering under redelivery (both stores)**
 
-*Which parts did you design vs extend vs inherit?*
-- Designed (mine): the billing-retry state; the Apple ordering guard (`shouldIgnoreAppleNotification`); the refund / revoke / consumption-request branches; the NB Premium product-config layer (paywall config, reading-mode gating, retention paywall); Google Play SKU creation.
-- Extended: the Google skip function — I rewrote its body (link-token / stale-event handling) on top of a teammate's original.
-- Inherited (teammates'): the Apple webhook handler and Google Pub/Sub consumer; the per-user redis lock; the base state machine (active/grace/expired/cancel and the renew/cancel/expire transitions); Stripe SKU creation.
-
-*Are the behavior-triggered upsell paywalls live?* — Honest: they exist as server config and are A/B-wired, but in production almost all of them (ad-view, high-frequency, comment-post, etc.) are turned off; only the article free-trial trigger is on. So the framework is built and ready, but most triggers aren't rolled out.
+- Q: Walk shouldIgnoreAppleNotification precisely. — A: (1) subRel==nil -> only SUBSCRIBED processed, everything else ignored+markIgnored. (2) stored `ExternalTransactionID == originalTransactionId` (same sub) -> ignore only if `eventTime.Before(subRel.LastNotifEventTime)` i.e. stale by signedDate, else process. (3) `PaidStatus==''` special-cases GRACE_PERIOD_EXPIRED and DID_CHANGE_RENEWAL_STATUS+AUTO_RENEW_DISABLED as benign-skip (ignore=true, setIgnored=false). (4) different externalTransactionID -> only SUBSCRIBED may re-point, else ignore.
+- Q: The function returns two booleans — difference? — A: First = ignore/skip processing; second = setIgnored, i.e. whether to mark the log row `Ignored=true`. The grace-period race cases return ignore=true but setIgnored=false because they're benign, not truly ignored — keeps the audit log honest.
+- Q: Is Apple dedup fully airtight? — A: It's time-based (eventTime vs LastNotifEventTime), NOT NotificationUUID-based. A redelivery with an EQUAL signedDate is not strictly Before the watermark, so it could re-process. In practice the transitions are idempotent-in-effect (re-writing the same terminal state), but a UUID-keyed dedup on `AppleNotificationLog.NotificationUUID` would close the gap — worth flagging as a hardening item.
+- Q: Google ordering under at-least-once unordered delivery? — A: `shouldIgnoreRTDN` uses `eventTime` (from `EventTimeMillis`) vs `LastNotifEventTime`, token match, and `LinkedPurchaseToken` chaining. Only type 4 (SUBSCRIPTION_PURCHASED) may create a brand-new relation when subRel==nil. Every write advances `LastNotifEventTime` as the watermark.
+- Q: How does LinkedPurchaseToken avoid mistaking an upgrade for a foreign/stale event? — A: On upgrade/downgrade/resubscribe Google issues a new purchaseToken but sets `LinkedPurchaseToken` (read from the FETCHED subscriptionV2, not the RTDN) pointing at the old one, so we chain it to the existing relation's `google_purchase_token` instead of treating the token change as a stranger.
 
 ---
 
-**Deep-dive Theme 7 — Product judgment (high ad-revenue users)** (mine: the check and its call sites)
+**Deep-dive — State machine: two status fields and the billing_retry design**
 
-*What does the high-revenue rule do?* — If a user made more than $50 in ad revenue over the past year (and isn't in a small QA exclusion list), the code shows them no subscription prompts, doesn't turn on the in-article-ads experiment, doesn't show reading-mode nudges, and doesn't lock premium articles — they get full content. The rationale: don't push a subscription (which removes ads) onto users who already generate a lot of ad revenue, so we don't cannibalize the ad money.
+- Q: Why two status fields, not one? — A: `Status` (paid/free/unsubscribed) is the 3-valued coarse ACCESS gate — client unlocks premium iff `status==paid`. `PaidStatus` (active/grace_period/billing_retry/cancel/paused) is the fine BILLING lifecycle. A degraded record can have `Status=unsubscribed` (access off) yet `PaidStatus=billing_retry` (not dead) — the doc comment in `premium_entitlement.go` spells this out.
+- Q: Why does StatusPaidToBillingRetry keep channel/sku/external_transaction_id/expire_at while StatusPaidToUnsubscribed wipes them? — A: billing_retry is recoverable: Apple retries billing up to 60 days, Google has recovery. Keeping the identifiers lets a later BILLING_RECOVERY / DID_RENEW restore `Status=paid` without a fresh purchase. `StatusPaidToUnsubscribed` is terminal — the empty `PaidStatus` is precisely what code reads as 'fully dead'.
+- Q: Why does GRACE_PERIOD_EXPIRED go to billing_retry, not expire? — A: Apple is still in its retry window (comments cite 60 days). EXPIRED is the terminal event; GRACE_PERIOD_EXPIRED just means grace ended but retries continue, so we hold in billing_retry.
+- Q: Why the +2-day extra grace in IsPaidStatusExpired? — A: It's a safety net for lost/late store callbacks. baseExpireAt = max(GraceUtilAt, ExpireAt) + 2 days. Third-party callbacks are preferred; this only fires on the read path so a stale paid record self-heals to unsubscribed if the webhook was dropped — while the +2 days avoids racing a slightly-late legitimate notification.
+- Q: paused? — A: `PaidSubscriptionStatusPaused` exists but `StatusPaidToPaused` currently sets `PaidStatus=billing_retry` with a TODO — clients can't render a real paused state yet, so it reuses billing_retry behavior.
 
-*Who set $50, and how do you know it's net positive?* — Honest: $50 is a hardcoded threshold; I can't claim I set the number or that there's a live measurement loop tuning it. The right way to know it's net-positive would be to A/B the threshold and compare ad revenue retained against subscription revenue forgone.
+---
 
-**Takeaway options** (pick per wording; default first):
-1. (default) "What stuck with me was that the hard part of subscriptions is treating the webhook stream as unreliable and designing state that survives it."
-2. "For me the lesson was that with money, the failure modes matter more than the happy path."
-3. (short) "Happy to go deeper on any layer."
+**Deep-dive — Persistence discipline: single writer, cache, locking, read consistency**
+
+- Q: How is write consistency kept across ~8 transition methods? — A: Single-writer discipline. Every transition mutates the in-memory relation via an entity mutator, then calls exactly one private writer (`updateNbPremiumSubRel`): re-reads pre-image for audit, `$set UpdateOne` keyed on `user_id`, `DelNBPremiumSubRelCache`, then `insertNBPremiumSubRelLog(ori,new)`. One place owns mongo write + cache invalidation + audit log, so none can drift.
+- Q: Cache design and penetration protection? — A: Cache-first `FindNbPremiumSubRelWithCacheAndUpdate` on key `nbpsr:<userID>`. Miss+not-found writes a `null` sentinel with 10min TTL (`ExpireAfterTenMinute`) to stop penetration; real docs cached 1h (`ExpireAfterOneHour`). Invalidation is delete-after-write, not write-through.
+- Q: The delete-after-write race? — A: Between `updateNbPremiumSubRel`'s Del and a concurrent read repopulating, a reader could momentarily reload a stale value. Mitigations: the per-user lock serializes the mutating side, and reads that matter for freshness (scene=premium_paid) bypass cache entirely. It's a known write-invalidate tradeoff vs write-through.
+- Q: Why per-user redis SetNX lock instead of a mongo txn / optimistic version? — A: The aggregate is one doc per user; contention is only same-user concurrent webhooks. A lightweight `nbprtdnlock:<userID>` SetNX (30s TTL, 3 tries, 500ms*(i+1) backoff) serializes read-modify-write cheaply without a distributed transaction. If not acquired after 3 tries the notification is returned unhandled -> store retries.
+- Q: TTL expires mid-processing, or userID lookup fails? — A: If the 30s TTL lapses mid-work another worker could enter — bounded by the fact writes are idempotent state sets. If AppAccountToken->userID resolves to <=0 the code proceeds WITHOUT a lock — a real correctness hole worth calling out. Read-your-writes: scene=premium_paid and the RTDN handler read PRIMARY (`api_master`), everything else secondary+cache.
+
+---
+
+**Deep-dive — Ending semantics: cancel vs expiry vs refund, and the SKU-divergent terminal state**
+
+- Q: Cancel vs expiry vs refund in one sentence each. — A: Cancel (Apple DID_CHANGE_RENEWAL_STATUS+AUTO_RENEW_DISABLED / Google type 3) = soft end: `PaidStatus=cancel`, keep ExpireAt, Status stays paid to period end. Expiry (Apple EXPIRED / Google 13) = hard end at boundary. Refund/Revoke (Apple REFUND|REVOKE / Google 12) = immediate hard end / chargeback.
+- Q: Why do expire and revoke land media in Status=free but NB Premium in Status=unsubscribed? — A: Same trigger, SKU-divergent terminal status. Media path calls `StatusPaidToFree` (Channel=free, clears expire/sku/txid) because a media follower falls back to a free relationship; NB Premium calls `StatusPaidToUnsubscribed` because there's no free tier to fall to — it's simply gone. Downstream consumers key off the different terminal status.
+- Q: Refund on a user who already turned off auto-renew (PaidStatus=cancel, Status still paid)? — A: The Apple guard is `if subRel.Status != SubscriptionStatusPaid { skip }`. Here Status is STILL paid, so the guard is false -> RevokePaidSubRel runs and hard-ends it. Only a fully expired/revoked record short-circuits. Correct: a refund must revoke even a cancelled-but-still-active sub.
+- Q: Why does Apple's refund arm have an in-switch already-revoked guard but Google doesn't? — A: Apple folds REFUND+REVOKE into one arm with `Status!=paid` skip. Google relies on `shouldIgnoreRTDN` instead — but its already-churned skip only fires when the incoming purchaseToken DIFFERS from stored AND the record is already unsubscribed with empty PaidStatus. A same-token type-12 replay on an unsubscribed record falls through to RevokePaidSubRel again — redundant but idempotent-in-effect (re-writing StatusPaidToUnsubscribed).
+- Q: Why fold REFUND and REVOKE together despite different causes (chargeback vs family-sharing loss)? — A: Both mean 'lose access immediately' with identical DB effect; the real-world cause is captured in the audit log, but the state mutation is the same, so one arm avoids duplicated logic.
+- Q: CONSUMPTION_REQUEST / REFUND_DECLINED? — A: Logged+acked, no state change. Risk of never answering CONSUMPTION_REQUEST: Apple uses consumption data to inform refund decisions, so declining to respond can bias refund outcomes against us — a known gap, not implemented yet.
+- Q: Read side turns terminal state into UX how? — A: `premium.go getPremiumAdConfig`: `PaidStatus=cancel` -> RetentionPaywallTypeCanceled, and if ExpireAt within 3 days (3 min on stage/test) -> ExpiredSoon; grace_period -> GracePeriod; a once-premium now-non-premium user -> Expire.
+
+**Takeaway options:**
+1. The unifying design move is fan-in: three stores with very different delivery models (Apple signed-push, Google pointer-pull, Stripe webhook) all reduce to one Mongo aggregate per user and one private writer, so idempotency, ordering, caching, and auditing are solved once rather than per store.
+2. Every entitlement decision is re-derived from an authenticated source — verify the JWS or re-fetch from the Play API — and separated into an access gate vs a billing lifecycle, which is what lets the system stay correct through renewals, retries, refunds, and lost webhooks.
+
+---
+
+### Story 2 — End-to-end UGC video upload pipeline (presign → anti-abuse → mp-api → review → read-back)
+Themes: Technical depth / Problem solving, User / Product focus, Cross-team / full-pipeline ownership
+
+**Situation**
+We own the UGC video upload pipeline that lets a NewsBreak creator record a video and get it live in the feed. It spans four systems: the client, our Go `server` (the API tier under `/Website/ugcvideo`), the Java `mp-api` media platform (the state authority), and the downstream doc-ingest/review systems — CPP for serving-doc creation plus the `bagel`/`doughnut` audit teams. The hard part is that a single upload is a long, asynchronous lifecycle — presign, direct-to-S3 upload, publish handoff, transcode, dedup, CPP ingest, human/ML audit — and the creator is staring at a "my uploads" screen expecting to see processing → published → live, or failed/rejected, in near real time. On top of that we were standing up an anti-abuse layer for the upload route and mid-flight migrating the read-back endpoint to protobuf.
+
+**Task**
+We had to make this end-to-end pipeline correct and legible: keep large video bytes off our API tier, hand off cleanly to mp-api, make mp-api the single source of truth for post state, translate its internal state enums into client-facing status the creator understands, and read that state back live without staleness. Alongside that we had to add IP/bot anti-abuse on the upload route without risking false-blocking legitimate creators, and migrate the status read-back path to proto at parity. The guiding constraint throughout was fail-open: never block a real upload on an infra hiccup.
+
+**Action**
+- INGEST — presign, not proxy: client calls GET /Website/ugcvideo/init-ugc-video-upload; server does an early fail-open rate pre-check (mp-api /post/check_ugc_video_upload → 429+cooldown BEFORE the client wastes bandwidth uploading a whole video), then asks VIDEO_FEED_SERVER for an S3 presigned URL + a vuid. Client PUTs the raw bytes directly to S3 — the video never transits our API tier.
+- ANTI-ABUSE — observe-only middleware on the submit route: GET /add-ugc-video-submission runs SessionAuth() then UgcAntiAbuse(), a Gin middleware that ports bloom-service's multi-layer rate-limiting into server but runs collect-only — it computes an IP bot score (6-aspect, 0-10) and a full smart-rate-limit decision, but a would-be block only emits a Warn log, never c.Abort(). Its real product effect is enriching the request with geo/ASN/botScore ip_info stashed under gin key ugc_ip_info for the controller to forward downstream.
+- HANDOFF — publish to mp-api: server resolves/creates a media_id, derives the video URL from the vuid on a cloudfront origin, injects ip_info into cpp_params, and POSTs SendUgcVideoRequest to mp-api /post/publish_ugc_video via DoWithHeaderPassthrough (to preserve mp-api's 429). mp-api inserts the post row at state=POSTING(1), audit_status=UNREVIEWED(0), returns data.post_id, and starts async transcode.
+- DOWNSTREAM — CPP + review over Kafka: CPP reports ingest outcome on Kafka topic mp_callback (consumed by CallbackService); success writes doc_id back and flips POSTING→POSTED(2), failure/duplicate/transcode-fail conditionally flip to POST_FAILED(4)/POST_DUP(9). The bagel/doughnut review teams publish verdicts on mp_audit_result, consumed by processAuditResult, which persists audit_status (REJECT=3 etc.), sends reject/report inbox messages, and refreshes the doc back through CPP. A CheckStuckPostingVideoJob sweeps a Redis ZSET every 10 min to force-fail anything stuck in POSTING >1h.
+- STATE AUTHORITY — mp-api owns the truth: real state lives as raw int columns post.state / post.audit_status in MySQL (mp.nb.com), with a separate string-vocabulary audit history in Mongo creator_network_review_tasks. Terminal transitions use compare-and-set (updateReasonStateIf ... WHERE state=POSTING) for idempotency and to never resurrect a user-deleted post. Serving reads are fronted by short-TTL Redis on a single node.
+- READ-BACK — server as live status translator: client polls GET /Website/ugcvideo/get-my-ugc-video-list; server pulls fresh per request (no intermediate cache) from mp-api /post/media/{id}/all_submitted_docs[_v2] — a time-ordered list where super_fresh_video placeholders carry mp_state and posted items carry doc_id. Posted docs are expanded via documentRepository.QueryDocs (the live, non-cached path) to read audit_status/reject_details. Server maps mp_state→banner (1 processing/4 failed/9 duplicate) and audit_status→banner (0 reviewing/3 rejected/1,2 live-no-banner), reassembling in mp-api's original order with the cursor advancing by len(items) so placeholders keep their slot.
+- MIGRATION — proto at parity: get-my-ugc-video-list runs a dual path (X-Stage-Migration-Path:proto header on stage, AB flag proto_migration_get_my_ugc_video_list in prod) sharing identical fetch+expand+reassemble logic and differing only in bind/writer, so we could validate proto vs legacy map response field-by-field before flipping.
+
+**Result**
+- A clean separation where the API tier never carries video bytes — only the presign broker, the publish handoff, and the status read-back — keeping large-object traffic off the server fleet.
+- mp-api is the single, authoritative state owner; every other system either reports into it (CPP, bagel/doughnut over Kafka) or reads live from it (server), so there is exactly one place the lifecycle is decided.
+- Creators see near-real-time, correctly-translated status (processing/failed/duplicate/reviewing/rejected/live) because the read-back path reads live on every request and translates two distinct internal enums into one client vocabulary.
+- Anti-abuse landed safely as observe-only: we get real bot-score/rate-limit signal against production traffic and geo/ASN enrichment today, with a clean path to flip to enforcement once the Warn logs validate the thresholds — zero false-block risk in the meantime.
+- The proto migration ran behind a header/AB dual path with shared logic, giving us field-level parity validation before rollout.
+
+**Follow-up ammo** — organized by deep-dive theme; each theme is a direction the interviewer can pull.
+
+---
+
+**Deep-dive — vuid binding & why bytes bypass the server**
+
+- Q: How does the vuid tie the presign to the later publish? — A: init-upload returns {presigned_url, vuid} from video-feed-server; submit derives origin_video_url = https://dcusoqhsuupgy.cloudfront.net/origin/{vuid}.mp4, so mp-api ingests by reference to the S3 object the client already PUT. The vuid is the join key between the presign step and the publish step.
+- Q: Why keep raw bytes off the API tier? — A: video is large; routing it through the Go server would blow up the API tier's bandwidth/memory. Presigned S3 PUT lets the client upload direct to S3; server only brokers a URL and later references it by cloudfront origin.
+- Q: What stops a client publishing a vuid it never uploaded? — A: nothing at the server layer — server trusts the vuid; the downstream transcode step is where a missing/invalid S3 object surfaces as transcode failure → POST_FAILED. That's a real gap worth closing with an existence check, but today it degrades to a failed post, not a bad publish.
+
+---
+
+**Deep-dive — observe-only anti-abuse: mechanism and when to enforce**
+
+- Q: Why observe-only instead of enforcing? — A: the logic is a verbatim port of bloom-service; before we let it Abort real creator uploads we want to validate the ported bot-scoring and 4-policy rate-limit against live traffic. A block path only logs Warn 'ugc_anti_abuse: would block (observe-only)'. We'd measure would-block volume, false-positive rate on known-good creators, and policy-band distribution from those logs before flipping.
+- Q: Walk the 3-layer IP-info+score lookup. — A: Layer1 Redis GET ugc_ip_bot_score:<ip>; Layer2 Mongo bloom.ip_info FindOne{_id:ip} (compute+cache score 24h, async backfill if stale); Layer3 brand-new IP → async backfill, cache default score 5 for 1min, return immediately. Layer3 avoids a 2-4s ipinfo.io round-trip blocking the request.
+- Q: Why increment counters BEFORE the IP-cooldown check? — A: so a banned IP's requests still inflate the user's counter. If we checked cooldown first and short-circuited, an attacker rotating IPs would reset their per-user record each time. Bumping counters first defeats IP rotation.
+- Q: A score of 5 — which policies match? — A: 5 falls in medium_risk (4-6) and general (0-10); we pick ALL bands containing the score and sort most-restrictive-first (by MaxReqsPerUser, then MaxUsersPerIP, then UserBanDur, then IPBanDuration), so medium_risk's 10 reqs/user 5-min ban governs over general's 4 reqs/user.
+- Q: setBanIfLonger — construct the bug it prevents. — A: a low_risk request (8m IP ban) arriving after a high_risk 6h ban would otherwise overwrite and shorten the active ban to 8m; the guard only overwrites when the new duration is longer, so the 6h ban survives.
+- Q: ipFetchSema is a global semaphore of 50 with non-blocking select-default. Under a new-IP burst backfills are dropped — how does it converge? — A: dropped backfills leave the default-5 score cached for only 1min, so subsequent requests re-attempt; steady-state the fan-out drains and real scores get written with 24h TTL. It's eventually-consistent by design to protect the process from ipinfo.io fan-out.
+
+---
+
+**Deep-dive — two-stage rate limit + fail-open**
+
+- Q: Why rate-limit twice (init pre-check + mp-api publish)? — A: the init check (mp-api /post/check_ugc_video_upload → 429+cooldown) stops the client before it uploads a whole video; mp-api still enforces the final hard limit at publish. The init check is a UX/bandwidth optimization, not the enforcement point.
+- Q: What race does the init check NOT close? — A: a client can pass the init check, upload, then hit publish where quota is now exhausted — so publish must independently enforce. Init is advisory; publish is authoritative.
+- Q: Why DoWithHeaderPassthrough only for publish_ugc_video? — A: a plain Post collapses all non-2xx into one 500, losing mp-api's 429. Passthrough preserves 429 → ErrorCodeUgcRateLimit(4003001, HTTP 429) so the client shows a cooldown instead of a generic error. Other paths don't need the distinction.
+- Q: What's the fail-open exposure? — A: every layer passes on failure — redis nil→Allowed, mongo miss→treated as miss, ipinfo all-fail→default score, quota check errors→allowed, and UgcAntiAbuse is observe-only. So during infra degradation abuse can flow; we accept that to never block legit creators, and mp-api's publish quota is the backstop that isn't fail-open.
+
+---
+
+**Deep-dive — mp-api state model & compare-and-set transitions**
+
+- Q: Why raw int columns with Java-constant enums, no DB enum? — A: PostState (POSTING=1,POSTED=2,DELETED=3,POST_FAILED=4,POST_DUP=9) and AuditStatus (UNREVIEWED=0,APPROVED=1,FEATURED=2,REJECT=3) are static-final ints on Post; no DB enum means consumers must know the mapping. Illegal transitions are prevented not by schema but by compare-and-set UPDATEs.
+- Q: Why updateReasonStateIf ... WHERE state=POSTING for terminal transitions? — A: it solves two problems at once — (a) idempotency: a repeated transcode-fail/dup/timeout callback returns 0 rows and skips re-invalidating cache/re-notifying; (b) it never overwrites a user DELETE that happened in-flight, because DELETED≠POSTING so the WHERE fails.
+- Q: CPP callback arrives after user deleted the post — trace it. — A: cppSuccess sees state==DELETED, calls documentService.deleteDocument to take the freshly-built doc offline, and writes doc_id with state=null so SQL IfNull(#{state}, state) preserves DELETED — it refuses to resurrect.
+- Q: MySQL audit_status vs Mongo AuditTask.status are different vocabularies — reconcile. — A: MySQL audit_status is an int (REJECT=3) and is authoritative for serving; Mongo creator_network_review_tasks is an append-style audit-task history with string status (completed/pending/canceled) and review_result.status (online). 'Rejected' in MySQL and 'not online' in Mongo are deliberately distinct concepts; the serving decision reads MySQL.
+
+---
+
+**Deep-dive — Kafka callback + audit ingest + stuck-posting backup**
+
+- Q: Why isolate prod/staging by mp_env payload field instead of separate topics? — A: stage and prod share the same Kafka + MySQL, so mp_callback/mp_audit_result are shared; each consumer compares payload mp_env against its own mp.env and early-acks mismatches. Risk: a misconfigured consumer group could cross-poison env; mitigated by the in-code env check on every message.
+- Q: Three paths can fail a stuck upload (CPP-fail callback, transcode-fail, 1h timeout job) — how avoid double-notify? — A: all three go through updateReasonStateIf(POST_FAILED, ..., expectState=POSTING); whichever fires first flips state, the rest return 0 rows and skip the inbox notice + FAIL_STEP metric. The conditional UPDATE is the dedupe.
+- Q: The stuck-posting job holds a Redis lock with TTL = its 10-min interval — what if a run exceeds 10 min? — A: the lock auto-expires and a second pod could start concurrently. It's tolerable because the work is itself idempotent (compare-and-set force-fail), but it's a real concurrency window; a longer lock TTL or lock renewal would be the fix.
+- Q: Trace a duplicate-video publish end to end. — A: transcode result → duplicateVideo() finds dupPostId → updateReasonStateIf(POST_DUP=9, 'duplicate video', POSTING) + updateVideoDuplication(true) + inbox notice → invalidateNewPostCache → on read-back the row appears as a super_fresh_video placeholder with mp_state=9 → server maps to 'duplicate' banner.
+- Q: Why skip NBScore recompute for source=doughnut? — A: doughnut (high-check) audits already scored the content, so recomputing is wasted work; bagel (creator-update-triggered) audits still need it. Misclassifying doughnut as bagel would just recompute redundantly — waste, not corruption.
+
+---
+
+**Deep-dive — live read-back & two-enum status translation**
+
+- Q: Why read status live per request instead of caching? — A: upload/audit state changes fast (processing→success/failed, unreviewed→approved/rejected); a cached value shows stale status on the one screen where freshness matters most. Server is a pass-through source of truth; the tradeoff is per-request mp-api load + doc-store QueryDocs load.
+- Q: Why QueryDocs directly instead of the cached GetDocuments path? — A: the cached path could return a pre-moderation snapshot; QueryDocs reads audit_status/reject_details fresh so a just-rejected doc shows 'rejected' immediately. Cost: bypasses cache, so it's real doc-store load per poll.
+- Q: Why two translation functions? — A: mp-api models two axes — PostState/mp_state is the lifecycle of an item still processing/deduped (only on super_fresh placeholders, no doc_id yet), AuditStatus is the moderation outcome of an item that already became a real doc. superFreshBannerText handles the former, AuditStatusBannerText the latter; APPROVED(1)/FEATURED(2) both map to empty banner = live.
+- Q: Why advance the cursor by len(items) not by expanded-doc count? — A: placeholders and failed-to-expand docs still occupy a slot in mp-api's ordered list; if we counted only expanded docs the offset would drift out of sync with mp-api's pagination and we'd re-fetch or skip items. Counting mp-api items keeps the cursor aligned.
+- Q: v2 vs legacy divergence for the same posted doc? — A: v2 (cv≥262700, newsbreak, Android/iOS, ugc_flow=v2) emits explicit banner Text + MpState=2 + AllowRetry=false/Deletable=true to match the placeholder card shape; legacy reuses MpState as the status carrier (audit_status≤1→1 else audit_status) and sets no Text, preserving old client semantics.
+- Q: mp-api all_submitted_docs times out vs a single doc fails to expand — how does it degrade? — A: a list-fetch timeout surfaces as an endpoint error (the whole page fails); a single doc that fails to expand is silently dropped from finalDocuments (not shown empty), so one bad doc doesn't break the page.
+
+---
+
+**Deep-dive — proto migration parity & rollout gating**
+
+- Q: How do you validate proto vs legacy parity? — A: both paths share identical fetch+expand+reassemble and differ only in bind/writer, so we dual-run (X-Stage-Migration-Path:proto header on stage, AB flag in prod) and diff field-by-field. Most-likely-to-drift fields: mp_state, banner Text, offset/size, and repeated-empty ([] vs null) and int64-as-string in Resp.
+- Q: Legacy vs proto response envelope? — A: legacy returns a map result{documents,offset,size} via core.WriteResponse; proto returns v1.GetMyUgcVideoListResp{code:0,status:success,result{...}} via WriteUnifiedResponse. Envelope code/status must be injected on the proto side to match legacy's map-writer behavior.
+- Q: Why gate useV2 on cv≥262700 not the version field? — A: only newer NewsBreak Android/iOS clients render the v2 unified card shape (banner Text + fixed MpState=2). Older clients fall back to MpState-as-status-carrier. Gating on client version (CVGte) not the version field targets exactly the clients that can render it.
+
+**Takeaway options:**
+1. The whole pipeline is organized around one principle — a single state authority (mp-api MySQL post row) that everyone else reports into or reads live from — which is what makes an inherently async, multi-system lifecycle legible to the creator in near real time.
+2. We de-risked two changes at once by making them non-destructive: anti-abuse shipped observe-only so we validate thresholds on real traffic before enforcing, and the proto migration ran a dual path sharing identical logic so we prove field-level parity before flipping.
+
