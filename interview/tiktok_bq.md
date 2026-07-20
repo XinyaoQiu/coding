@@ -1,9 +1,10 @@
 # TikTok — Behavioral Questions Prep
 
-> Structure:
-> - **Part 1 — Q&A**: interview question + spoken-style English answer (ready to say in a real interview). Each answer links to a story in Part 2.
-> - **Part 2 — Story bank**: one detailed version per story (full STAR + quantified data + deep follow-up ammo), reusable across questions.
-> - One story can be referenced by multiple questions; Q and Story are linked via Markdown internal links.
+> Structure — organized by interview round. Each round block has: self-intro, likely questions, questions to ask back. Detailed reusable stories live in Part 4 (Story bank); question answers link into it.
+> - Part 1 — HR / recruiter screen
+> - Part 2 — Technical round (coding / tech screen)
+> - Part 3 — Hiring Manager (HM) round
+> - Part 4 — Story bank (shared, referenced by all rounds)
 
 ---
 
@@ -11,19 +12,15 @@
 
 生成/修改本文件答案时遵守：
 
-1. **语言**：文件保存内容全英文；跟用户对话用中文。
-2. **STAR 比例**：S+T ≈ 20%，Action+Result ≈ 80%。症状归 Situation，根因归 Task，两段不重复。
-3. **⚠️ TikTok 特点 —— 挖细节（本文件与 amazon_bq.md 的核心区别）**：TikTok BQ 面试官追问极深，看重**具体技术细节 + 量化数据 + 决策链条**，不满足于高层叙事。因此：
-   - **Follow-up ammo 区必须做厚做深**：每个 story 的 follow-up 区是重点，覆盖「机制细节 / 具体数字 / 为什么这样选而不那样选 / 边界与失败模式 / 我做的 vs 别人做的」。宁可 follow-up 过量也别不够。
-   - **量化优先**：能给数字的地方一律给数字（QPS、延迟、pod 数、内存、请求量、时间跨度、影响用户数、PR 数）。数字必须以代码/git/监控核实为准，不编。
-   - **主叙事仍保持颗粒度克制**：Action 讲「多层链路 + 关键决策」，不讲每层实现细节；实现细节全部下沉到 follow-up 区，被追问才放。判断标准同 amazon：这句去掉后面试官是否就不知道你做了什么关键决定？是→留，否→下沉。
-4. **收尾**：每题 Result 后配一句 takeaway，自然收束。收尾类型三选一并在相邻题间轮换：① takeaway 点题 ② 落在有力/量化的结果画面上 ③ 交回控制权（"Happy to go deeper on any part."）。开头话术库：The takeaway for me was… / For me, the lesson was… / What stuck with me was… / Looking back… / Ever since then, I…。避免像背模板。
-5. **默认无 follow-up**：主叙事的一段 STAR 要自己把 4 要素说全说满；follow-up 弹药单独存，被追问才用。
-6. **用词口语化**：偏书面的词给口语替代（surface → show up as；the moment → as soon as）；生僻词附替代方案。
-7. **主题分类而非 LP**：TikTok 没有 Amazon 的 16 条 Leadership Principles。用 TikTok 常见 BQ 主题给每题打标签（见下方主题清单），不套 Amazon LP 名。
-8. **收录范围**：只写用户明确要准备的题/故事，不擅自加题。素材来源由另一个 session 从 project 更新填入。
+1. **语言**：**正文（Part 1–4）全部是英文可直接念的稿，不含任何中文**（题目 + 答案）。所有中文策略提示集中放在下方「策略提示区」，正文里绝不夹中文。跟用户对话用中文。
+2. **按轮次分块**：文件按 HR 面 / 技术面 / HM 面三大块组织（Part 1/2/3），每块含 自我介绍 + 可能被问的问题 + 反问。可复用的详细故事集中放 Part 4 Story bank，各块问题用 Markdown 内链引用。
+3. **自我介绍三块共用同一底稿**（用户确认）：三轮 self-intro 用同一段，按轮次微调结尾。
+4. **STAR 比例**：S+T ≈ 20%，Action+Result ≈ 80%。症状归 Situation，根因归 Task，不重复。
+5. **⚠️ TikTok 特点 —— 挖细节**：面试官追问极深，看重具体技术细节 + 量化数据 + 决策链条。Follow-up ammo 区必须做厚做深（机制 / 数字 / 为什么这样选 / 边界失败模式 / 我做的 vs 别人做的）；量化优先，数字以代码/git/监控核实为准，不编；主叙事保持颗粒度克制，实现细节下沉到 follow-up。
+6. **收尾**：每题 Result 后配一句 takeaway，收尾类型三选一并在相邻题间轮换（takeaway 点题 / 落在量化结果 / 交回控制权），避免像背模板。
+7. **收录范围**：只写用户明确要准备的题/故事，不擅自加题。
 
-### TikTok BQ 常见主题清单（给每题 / 每 story 打标签用）
+### TikTok BQ 常见主题清单（打标签用）
 
 - **Impact / Ownership** —— 主动扛下、把事做成、可量化的业务影响。
 - **Technical depth / Problem solving** —— 复杂技术问题、根因排查、系统设计取舍。
@@ -33,71 +30,117 @@
 - **Prioritization / Trade-off** —— 资源/时间有限下的取舍。
 - **User / Product focus** —— 从用户或产品价值出发做决策。
 
-> 注：一个 story 可覆盖多个主题；打标签时列主 + 次。
+### 策略提示区（怎么用正文里的稿 —— 正文保持纯英文，策略都写这里）
+
+**Self-intro（三轮通用）**：学历 → Newsbreak 全职（说得比实习多）→ Alibaba/Tesla 实习各一句 → 结尾落 fast-paced + real-world impact。省略 TikTok / UMTRI 两段实习。毕业时间过去时（2025-12 已毕业）。`[Name]` 是占位。oncall 挂在 Newsbreak 不是实习。按轮次换结尾：HR 落 career goals；技术面落进题；HM 落项目。
+
+**Part 1 HR — career goals**：定位「深耕后端 + 大规模系统」（专注有方向感），不是转方向。三点：①我是谁/做过什么 ②想往哪走 ③why TikTok(scale 对上)。真诚 > 流利。
+
+**Part 1 HR — why leaving Newsbreak / why now**：⚠️ 只用 pull factor，绝不用 push factor。红线——不说「现在工作没 impact」「正在积极找」（Applied 那次的说法，不要重复）。要说：喜欢现在的团队，但 TikTok LIVE 团队做的全球内容治理 + 高并发底层工具正是技术热情终极所在；可顺带提想去大公司（但「大公司」必须紧跟 scale/traffic 的技术理由，别裸说）。
+
+**Part 1 HR — work authorization**：身份 F-1 OPT first year（STEM）。策略：先讲 runway（现在能合法工作 + STEM extension 约 3 年），再讲未来需要 sponsorship。别只说"需要 H1B"（听起来像马上要）。
+
+**Part 1 HR — 反问**：HR 通常开头已介绍岗位/team，别再问"team 做什么"（显得没听），顺着往下挖 or 问流程。
+
+**Part 3 HM — project opener delivery**：opener 里不用 jargon（no RTDN / SetNX / fencing），留给 follow-up；ownership 用一句轻描（"a notification pipeline the team already had"），完整边界讨论走 Story 1 Theme 6；紧张就只说 Core + close。
+
+**Story 1 诚实红线（HM 面最重要）**：
+- per-user lock、Apple webhook handler + Google Pub/Sub consumer、base state machine、Stripe SKU creation 都不是我的（teammates'）。可完整解释当背景，但「你建了 X 吗」→「那是 existing infra，我的部分是 ordering guard / billing-retry state / product-config layer」。解释 ≠ 揽功。
+- billing-retry 无实测 retention lift；high-revenue 规则无实测 impact —— 讲 intent，别编数字。
+- 实际测试覆盖未核实 —— 别声称有 replay harness 或具体测试套件，除非真的有。Patrick 需自己确认跑了哪些 sandbox/unit case。
+- behavior-triggered upsell paywalls 生产环境大多关着 —— 框架搭好了但没放量，别暗示在驱动转化。
 
 ---
 
-## Part 0 — Openers / intros (自我介绍 + HR screen 开场稿)
+## Shared self-intro
 
-> 开场/screen 类口语稿总节。三块：0A coding 轮简短自我介绍、0B HR/recruiter 面 background+goals、0C coding 轮项目深度 opener（被问"讲个项目"时用）。
-
-### 0A — Coding-round self-intro (~45–60s)
-
-> coding 面最开始的自我介绍：high-level 覆盖全背景（Newsbreak 三件事 + oncall + 两段实习 + 学历），各一句不展开，结尾主动交回控制权进题。用词偏好：oncall 句用 "digging into production alerts and finding the root cause of issues"（不用更随意的说法）；oncall 明确挂在 Newsbreak（"on-call rotation there"），不是实习。
-
-> "Hey, thanks — happy to be here. So I'm a backend engineer. I graduated from UIUC last December, and since then I've been at Newsbreak, which is a large news app, working mostly on the backend.
+> "Hey, I'm [Name]. I did my Master's in Computer Science at UIUC and graduated last December. Since then I've been a backend engineer at Newsbreak, a large news app, working on real production systems.
 >
-> A few things I've worked on there — I own a good chunk of our premium subscription system, I've worked on our UGC video-upload pipeline — both an anti-abuse layer that filters out bad upload traffic, and fixing the upload-status side so users get a clear, reliable state instead of videos getting stuck on "processing" — and my main project this year has been migrating our APIs from JSON over to Protobuf, which was a lot of endpoints without breaking anything live. I'm also on the on-call rotation there, so I'm pretty comfortable digging into production alerts and finding the root cause of issues.
+> A few things I've worked on there — I own a good chunk of our premium subscription system, I've worked on our UGC video-upload pipeline on both anti-abuse and upload status, and my main project this year has been migrating our APIs from JSON to Protobuf across a lot of endpoints. I'm also on the on-call rotation there, so I'm comfortable digging into production alerts and finding the root cause of issues.
 >
-> Before Newsbreak I interned at Alibaba Cloud and at Tesla, both full-stack — the Alibaba one got me into large-scale systems and reliability, and at Tesla I was building internal tools.
+> Before Newsbreak I interned at Alibaba Cloud, where I built a big-data processing infrastructure — a data lake that ingested log files into our lakehouse storage — and at Tesla, where I built an internal Gantt-chart website for task management used by a lot of internal users.
 >
-> Mostly I like backend work where correctness really matters. Happy to jump into the problem whenever you're ready."
+> Across all of these, what I've found is that I like working in a fast-paced environment, solving real-world problems and seeing the impact."
 
 ---
 
-### 0B — HR / recruiter screen (professional background + career goals)
+## Part 1 — HR / recruiter screen
 
-> HR 面考表达清晰 + 动机真诚 + 跟岗位对得上，不深挖技术。背景口径同 0A，区别是结尾落到 career goals + why TikTok。career goals 路线定位=「深耕后端 + 大规模系统」（专注有方向感），不是转方向。核心三点讲到即可：①我是谁/做过什么 ②想往哪走(backend深耕+大规模) ③why TikTok(scale对上)。真诚 > 流利。
+### 1.1 Self-intro
 
-**[Professional background]**
-
-> "Sure. I'm a backend engineer — I graduated from UIUC last December, and I've been at Newsbreak, a large news app, since then, working on the backend.
+> "Hey, I'm [Name]. I did my Master's at UIUC and graduated last December. Since then I've been a backend engineer at Newsbreak, which is a tech company focused on local news and AI, and I work on the server side.
 >
-> The work I do there is pretty core backend — I own a good part of our premium subscription system, I've worked on our video-upload pipeline — both anti-abuse and making the upload status reliable for users — and my main project this year has been migrating our APIs to Protobuf across a lot of endpoints without breaking anything in production. I'm also on the on-call rotation, so I spend a fair amount of time digging into production issues and finding root causes. Before Newsbreak I interned at Alibaba Cloud, which got me into large-scale systems and reliability, and at Tesla building internal tools."
+> I've done a few things here. First, I migrated our core APIs from JSON to Protobuf. Second, for the video-upload pipeline, I built an anti-abuse middleware and improved the upload status handling. The last thing is I developed some new features for our premium subscription system, like a billing-retry flow that wins back users after a failed payment. I'm also on the on-call rotation here, so I'm comfortable digging into production alerts and finding the root cause of issues.
+>
+> For internships, I interned at Alibaba Cloud, where I built a big-data processing infrastructure — a data lake that ingested log files into our lakehouse storage — and at Tesla, where I built an internal Gantt-chart website for task management used by a lot of internal users.
+>
+> Across all of these, what I've found is that I like working in a fast-paced environment, solving real-world problems and seeing the impact. That's why I applied to TikTok."
 
-**[Career goals — 必须跟 TikTok scale 挂钩]**
+### 1.2 Likely questions
+
+**Q. Walk me through your background.**
+
+Use the 1.1 self-intro.
+
+**Q. What are your career goals / what are you looking for?**
 
 > "As for where I want to go — I want to keep growing as a backend engineer and go deeper on large-scale, high-traffic systems. What I've realized I enjoy most is the work where correctness and reliability really matter — the failure modes, the edge cases, the on-call side of things — and I want to be somewhere the scale actually forces you to get those things right. That's honestly a big part of why I'm interested in TikTok — the scale here is a different level, and I'd like to grow into an engineer who can own and design systems at that scale, not just work within them."
 
-**Delivery notes (internal, don't say out loud):**
-- 若追问「为什么离开 Newsbreak / 为什么现在跳」（HR 电话可能口头再问，即使邮件已答过）：**只用 pull factor，绝不用 push factor**。红线——不说「现在工作没 impact」「正在积极找」（Applied 那次的说法，不要重复）。要说：喜欢现在的团队，但 TikTok LIVE 团队做的**全球内容治理 + 高并发底层工具**正是我技术热情的终极所在；可顺带提想去大公司。英文口语版：
-  > "Honestly, I really like my current team — this isn't me running from anything. It's more that what your LIVE team works on — global content governance and the high-concurrency infrastructure behind it — is exactly where my technical passion is. And I'd like to grow at a company operating at that kind of scale."
+**Q. Why are you leaving Newsbreak / why now?**
 
-**[Work authorization — HR 问到时主动交代]**
+> "Honestly, I really like my current team — this isn't me running from anything. It's more that what your LIVE team works on — global content governance and the high-concurrency infrastructure behind it — is exactly where my technical passion is. And I'd like to grow at a company operating at that kind of scale."
 
-> 身份=F-1 OPT first year（STEM 专业）。策略：先讲 runway（现在能合法工作 + STEM extension 约 3 年），再讲未来需要 sponsorship。别只说"需要 H1B"（听起来像马上要）。
+**Q. What's your work authorization status?**
 
-> "Sure — I'm currently on F-1 OPT, and I just started, so I'm authorized to work right now. My degree is STEM, so I'm also eligible for the STEM extension, which gives me around three years total on OPT. Down the line I would need H1B sponsorship — I just want to be upfront about that early."
+> "I'm currently on OPT — it started this February — and with the STEM extension I have about two and a half years left. I would need H1B sponsorship down the line."
 
-**[Questions to ask back — HR 轮结尾反问]**
+### 1.3 Questions to ask back
 
-> HR 通常开头已介绍岗位/team，反问别再问"team 做什么"（显得没听）。顺着她的介绍往下挖 or 问流程。
+If not already covered, ask one of:
 
-> "You gave a great overview of the team — building on that, what would success look like for someone in this role in the first six months?"
+> "You mentioned the team — building on that, what would make someone successful in this role in the first six months?"
 
-> 备选（问流程收尾）："What do the next steps look like from here, and is there anything from my background you'd like me to expand on for the next round?"
+> "What do the next steps look like from here?"
+
+If she already covered both the team and the process:
+
+> "You've actually covered most of what I was curious about, so I don't have questions. I'm looking forward to the next steps."
 
 ---
 
-### 0C — Coding-round project opener (轻量版，开场 2–5 min 口语稿)
+## Part 2 — Technical round (coding / tech screen)
 
-> 被问"讲个项目"时的深度 opener：high-level、少术语、一个钩子 + 一个数字，说完主动交回控制权进题。深挖细节全部留给 HM 面（见 Part 1 / Part 2）。目标时长 ~2 min 核心，可扩到 ~4 min；读现场气氛收放。
+### 2.1 Self-intro
+
+Use the Shared self-intro, ending with:
+
+> "Mostly I like backend work where correctness really matters. Happy to jump into the problem whenever you're ready."
+
+### 2.2 Likely questions
+
+Coding problems live in tiktok_coding.md. If asked to talk through a project or a system, use a short version and point to [Story 1](#story-1--subscription-billing-correctness--the-billing-retry-state) — keep the depth controlled here; save the deep dive for the HM round.
+
+### 2.3 Questions to ask back
+
+> "What does the day-to-day engineering workflow look like on the team — how do code review, testing, and on-call work?"
+
+> "What's a technical challenge the team is actively working on right now?"
+
+---
+
+## Part 3 — Hiring Manager (HM) round
+
+### 3.1 Self-intro
+
+Use the Shared self-intro, ending with:
+
+> "Happy to go deep on any of these — the subscription system is probably the one I've owned most end to end."
+
+### 3.2 Project opener
 
 **[Core — always say, ~2 min]**
 
-> "Sure. I'm a backend engineer — for about the past year I've worked mostly on the subscription and premium-membership side of a large news app.
->
-> The project I'd pick is our subscription billing system. The interesting thing about it is that we never actually handle the money — Apple and Google are the ones charging the user. So all our backend really knows about someone's subscription is what Apple and Google tell us — Apple posts notifications to a webhook on our side, and we consume Google's over Pub/Sub. And that event stream is messy — things come out of order, get duplicated, arrive late. So the real problem isn't 'process a payment,' it's 'keep a correct subscription state on top of an unreliable event stream' — and since it's money, being wrong is expensive.
+> "The project I'd pick is our subscription billing system. The interesting thing about it is that we never actually handle the money — Apple and Google are the ones charging the user. So all our backend really knows about someone's subscription is what Apple and Google tell us — Apple posts notifications to a webhook on our side, and we consume Google's over Pub/Sub. And that event stream is messy — things come out of order, get duplicated, arrive late. So the real problem isn't 'process a payment,' it's 'keep a correct subscription state on top of an unreliable event stream' — and since it's money, being wrong is expensive.
 >
 > I worked on two main things there. The first: what happens when a renewal charge fails. The system used to just drop the user right away — but the platforms actually keep retrying the charge for weeks, and a lot of those users recover. So I added a 'billing-retry' state — instead of dropping them, we turn access off but keep their record alive through that retry window, and that feeds a win-back flow to bring them back.
 >
@@ -111,36 +154,12 @@
 
 **[Close — hand back control]**
 
-> "Happy to go deeper on any of it — or we can jump straight into the problem."
+> "Happy to go deeper on any of it."
 
-**Delivery notes (internal, don't say out loud):**
-- No jargon in this version (no RTDN / SetNX / fencing). Save all of that for the HM round.
-- Ownership is handled with one light clause — "a notification pipeline the team already had." Don't open the full boundary discussion here.
-- If nervous, say only the Core and close. Expand only on a prompt.
+### 3.3 Likely questions
 
----
-
-## Part 1 — Q&A
-
-> 占位框架。每题按下面模板填写。素材由另一个 session 从 project 更新。
-
-<!--
-### Q1. <interview question>
-**Theme:** <主主题> (also: <次主题>)
-**Story used:** → [Story X — <title>](#story-x--<anchor>)
-
-> **(Situation)** …
->
-> **(Task)** …
->
-> **(Action)** …
->
-> **(Result)** … <takeaway 一句收尾>
--->
-
-### Q1. Tell me about your favorite project. What was the hardest part, and what would you do differently?
-**Theme:** Technical depth / Problem solving (also: Ownership, Failure/Learning)
-**Story used:** → [Story 1 — Subscription billing correctness & the billing-retry state](#story-1--subscription-billing-correctness--the-billing-retry-state)
+#### Q. Tell me about your favorite project. What was the hardest part, and what would you do differently?
+Story used: → [Story 1](#story-1--subscription-billing-correctness--the-billing-retry-state)
 
 > **(Situation)** I own a big part of our subscription and premium-membership backend. The backend never touches money — Apple and Google are the merchants of record — so a user's paid access is only as correct as how we process the webhooks they send us, and those webhooks arrive out of order, duplicated, and late.
 >
@@ -150,46 +169,18 @@
 >
 > **(Result)** The pipeline reliably handles around 1,500 subscription notifications a day across Apple, Google, and Stripe, and the billing-retry state turned a chunk of what used to be hard churn into recoverable, win-back-eligible users. What stuck with me was that the hard part of subscriptions isn't the happy path — it's treating the webhook stream as unreliable and designing state that survives it. Happy to go deeper on the state design or the ordering logic.
 
+### 3.4 Questions to ask back
+
+> "What's the biggest technical challenge the team is focused on over the next couple of quarters?"
+
+> "What does growth look like on this team — how do engineers here move from owning features to owning systems?"
+
 ---
 
-## Part 2 — Story bank
-
-> 占位框架。每个 story 按下面模板填写。**Follow-up ammo 区是 TikTok 的重点，必须做厚（见 Agent Notes 第 3 条）。**
-
-<!--
-### Story X — <title>
-**Themes covered:** <主主题>（primary）, <次主题>…
-**When:** <YYYY-MM 或时期>
-
-**Situation**
-…
-
-**Task**
-…
-
-**Action** (multi-layer, low-detail — 细节下沉到 follow-up)
-- …
-
-**Result**
-- …（尽量量化）
-
-**Follow-up ammo**（TikTok 重点：机制 / 数字 / 为什么这样选 / 边界失败模式 / 我做的 vs 别人做的）
-
-*<追问1>* — …
-
-*<追问2>* — …
-
-⚠️ 深挖风险点：<哪句经不起追问，怎么弱化>
-
-**Takeaway options**（pick per wording；default 第一个）：
-1. (default) "…"
-2. "…"
-3. (short) "…"
--->
+## Part 4 — Story bank
 
 ### Story 1 — Subscription billing correctness & the billing-retry state
-**Themes covered:** Technical depth / Problem solving (primary), Ownership, Failure/Learning
-**When:** 2026-04 → 2026-05
+Themes: Technical depth / Problem solving (primary), Ownership, Failure/Learning. When: 2026-04 → 2026-05.
 
 **Situation**
 The backend never handles the money — Apple and Google are the merchants of record and charge the user directly. So the only thing our system knows about a subscription is what the platforms tell us. The two arrive by different transports: Apple's App Store Server Notifications are HTTP POSTs to a webhook endpoint on our server; Google's RTDN comes over Pub/Sub — Google publishes to a topic and our server consumes it as a subscriber. Either way the event stream arrives out of order, gets duplicated, and shows up late. And it's money, so getting the state wrong means either giving away paid access or cutting off a paying user.
@@ -197,17 +188,17 @@ The backend never handles the money — Apple and Google are the merchants of re
 **Task**
 Two gaps were mine to close. (1) Correctness: nothing stopped a late or duplicate event from overwriting good state. (2) Retention: on a failed renewal charge the system dropped the user immediately, even though the platform keeps retrying billing for weeks and many of those users recover — so we were throwing away recoverable revenue.
 
-**Action** (multi-layer, low-detail — mechanism sinks to follow-up)
-- **Framed the problem around the existing system.** The Apple webhook handler, the Google Pub/Sub consumer, and a per-user lock that serializes concurrent events for one user were already there. The lock handles concurrency; it does not handle ordering. My work sits inside that.
-- **Ordering guard (mine).** Before any state write, decide skip-or-process based on event time + transaction identity, so a stale replay or a duplicate can't regress the record.
-- **billing-retry state (mine — the main design).** Split entitlement from lifecycle: a failed charge sets access off but keeps the record recoverable through the platform's retry window, and that state feeds the retention/win-back paywall.
-- **Refund/revoke + observability (mine).** Added the refund, family-sharing revoke, and consumption-request paths that weren't covered, and enriched the notification logs so this is debuggable in prod.
+**Action**
+- Framed the problem around the existing system. The Apple webhook handler, the Google Pub/Sub consumer, and a per-user lock that serializes concurrent events for one user were already there. The lock handles concurrency; it does not handle ordering. My work sits inside that.
+- Ordering guard (mine). Before any state write, decide skip-or-process based on event time + transaction identity, so a stale replay or a duplicate can't regress the record.
+- billing-retry state (mine — the main design). Split entitlement from lifecycle: a failed charge sets access off but keeps the record recoverable through the platform's retry window, and that state feeds the retention/win-back paywall.
+- Refund/revoke + observability (mine). Added the refund, family-sharing revoke, and consumption-request paths that weren't covered, and enriched the notification logs so this is debuggable in prod.
 
 **Result**
 - ~1,500 notifications/day across Apple (~300), Google (~1,200), Stripe (~26); ~24 new subscriptions/day; subscription-status reads ~35M/day.
 - billing-retry converts first-failure churn into a recoverable, win-back-eligible state instead of a hard drop.
 
-**Follow-up ammo** — organized by deep-dive theme (this is one project; each theme is a direction the interviewer can pull). Do the mechanism, the number, the "why-this-not-that," and mark mine vs teammates'.
+**Follow-up ammo** — organized by deep-dive theme (this is one project; each theme is a direction the interviewer can pull).
 
 ---
 
@@ -221,7 +212,7 @@ Two gaps were mine to close. (1) Correctness: nothing stopped a late or duplicat
 
 *Isn't there a read-modify-write race between the guard reading last-event-time and the write?* — Yes, and that's exactly what the per-user lock is for — it serializes all processing for one user so the read-modify-write is single-threaded per user. Different users touch different records.
 
-⚠️ There's a real bug here I found: a duplicate new-purchase event for a *different, older* transaction can rebind the record back to that old transaction — the mismatch path has no time guard and the transaction→record mapping is never pruned. Low-probability, but real. (Covered in the redo list.)
+Known bug to be honest about: a duplicate new-purchase event for a *different, older* transaction can rebind the record back to that old transaction — the mismatch path has no time guard and the transaction→record mapping is never pruned. Low-probability, but real.
 
 ---
 
@@ -255,9 +246,9 @@ Two gaps were mine to close. (1) Correctness: nothing stopped a late or duplicat
 
 **Deep-dive Theme 4 — Testing & safe rollout** (mine: the prod test-user gate)
 
-*How would you test out-of-order and duplicate delivery?* — Two layers. Unit level: the ordering guard is a pure function of (record, event, event-time), so I test skip-or-process on crafted sequences — a stale replay, a same-timestamp duplicate, a resubscribe with a new transaction id. End-to-end level: I run real subscriptions in **stage against Apple/Google's sandbox**. The sandbox accelerates the renewal cycle — a monthly sub renews every few minutes instead of every month; that acceleration is a platform feature, not ours, and our stage deployment is just the backend wired up as the Sandbox server that receives those `Environment=Sandbox` notifications — so I can watch the whole state machine (renew → fail → grace → billing-retry → expire → recover) play out end-to-end in one session against the real handler. ⚠️ I have NOT verified Patrick's actual test coverage — he must state which sandbox scenarios and unit cases he really ran; do not claim a replay harness that wasn't built. Honest caveat to keep ready: sandbox timing is compressed and some paths (certain refund / family-sharing cases) are hard to reproduce there, plus env-gating can make a path structurally untestable on stage even with identical code — so sandbox-green ≠ prod-safe. The cross-transaction rebind bug is an example my testing didn't catch.
+*How would you test out-of-order and duplicate delivery?* — Two layers. Unit level: the ordering guard is a pure function of (record, event, event-time), so I test skip-or-process on crafted sequences — a stale replay, a same-timestamp duplicate, a resubscribe with a new transaction id. End-to-end level: I run real subscriptions in stage against Apple/Google's sandbox. The sandbox accelerates the renewal cycle — a monthly sub renews every few minutes instead of every month; that acceleration is a platform feature, not ours, and our stage deployment is just the backend wired up as the Sandbox server that receives those `Environment=Sandbox` notifications — so I can watch the whole state machine (renew → fail → grace → billing-retry → expire → recover) play out end-to-end in one session against the real handler. Honest caveat: sandbox timing is compressed and some paths (certain refund / family-sharing cases) are hard to reproduce there, plus env-gating can make a path structurally untestable on stage even with identical code — so sandbox-green ≠ prod-safe. The cross-transaction rebind bug is an example my testing didn't catch.
 
-*You added a prod test-user list — why hardcoded IDs, and why test in prod at all if sandbox works?* — The billing lifecycle itself I can test in stage/sandbox. `isProdTestUser` is for the *last* step: validating the retention paywall on the **prod deployment with the real client** for a small controlled set of accounts before rolling out — the real rendering and end-to-end context you only get on prod (the code comment literally says it's for the grace-period retention-paywall test on prod). It's OR'd with a stage check. The risks I'd call out: it's a hardcoded list, not a managed flag, so it rots; if a real user's id landed in it they'd silently get test behavior; and a sibling `isSkuTestUser` has no callers — dead code I should remove.
+*You added a prod test-user list — why hardcoded IDs, and why test in prod at all if sandbox works?* — The billing lifecycle itself I can test in stage/sandbox. `isProdTestUser` is for the *last* step: validating the retention paywall on the prod deployment with the real client for a small controlled set of accounts before rolling out — the real rendering and end-to-end context you only get on prod. It's OR'd with a stage check. The risks I'd call out: it's a hardcoded list, not a managed flag, so it rots; if a real user's id landed in it they'd silently get test behavior; and a sibling `isSkuTestUser` has no callers — dead code I should remove.
 
 *How did you roll out a state-machine change to a money path safely?* — First validate the full state machine in stage against sandbox — the accelerated clock lets me cover renew/fail/grace/retry/expire in minutes — then prod, with the test-user gate for a final controlled check. You can't cleanly A/B a notification handler per user, so stage-sandbox is the main pre-prod gate; the guard defaulting to skip-when-unsure plus the enriched logs are the safety net. If I redid it I'd add a shadow mode — compute the new state and log the diff without applying it — before flipping it on.
 
@@ -271,14 +262,14 @@ Two gaps were mine to close. (1) Correctness: nothing stopped a late or duplicat
 
 ---
 
-**Deep-dive Theme 6 — Ownership & boundaries** (the honesty probe — answer it cleanly)
+**Deep-dive Theme 6 — Ownership & boundaries**
 
 *Which parts did you design vs extend vs inherit?*
-- **Designed (mine):** the billing-retry state; the Apple ordering guard (`shouldIgnoreAppleNotification`); the refund / revoke / consumption-request branches; the NB Premium product-config layer (paywall config, reading-mode gating, retention paywall); Google Play SKU creation.
-- **Extended:** the Google skip function — I rewrote its body (link-token / stale-event handling) on top of a teammate's original.
-- **Inherited (teammates'):** the Apple webhook handler and Google Pub/Sub consumer; the per-user redis lock; the base state machine (active/grace/expired/cancel and the renew/cancel/expire transitions); Stripe SKU creation.
+- Designed (mine): the billing-retry state; the Apple ordering guard (`shouldIgnoreAppleNotification`); the refund / revoke / consumption-request branches; the NB Premium product-config layer (paywall config, reading-mode gating, retention paywall); Google Play SKU creation.
+- Extended: the Google skip function — I rewrote its body (link-token / stale-event handling) on top of a teammate's original.
+- Inherited (teammates'): the Apple webhook handler and Google Pub/Sub consumer; the per-user redis lock; the base state machine (active/grace/expired/cancel and the renew/cancel/expire transitions); Stripe SKU creation.
 
-*Are the behavior-triggered upsell paywalls live?* — Honest: they exist as server config and are A/B-wired, but in production almost all of them (ad-view, high-frequency, comment-post, etc.) are turned off; only the article free-trial trigger is on. So the framework is built and ready, but most triggers aren't rolled out. Don't imply they're actively driving conversions.
+*Are the behavior-triggered upsell paywalls live?* — Honest: they exist as server config and are A/B-wired, but in production almost all of them (ad-view, high-frequency, comment-post, etc.) are turned off; only the article free-trial trigger is on. So the framework is built and ready, but most triggers aren't rolled out.
 
 ---
 
@@ -286,15 +277,7 @@ Two gaps were mine to close. (1) Correctness: nothing stopped a late or duplicat
 
 *What does the high-revenue rule do?* — If a user made more than $50 in ad revenue over the past year (and isn't in a small QA exclusion list), the code shows them no subscription prompts, doesn't turn on the in-article-ads experiment, doesn't show reading-mode nudges, and doesn't lock premium articles — they get full content. The rationale: don't push a subscription (which removes ads) onto users who already generate a lot of ad revenue, so we don't cannibalize the ad money.
 
-*Who set $50, and how do you know it's net positive?* — Honest: $50 is a hardcoded threshold; I can't claim I set the number or that there's a live measurement loop tuning it. The right way to know it's net-positive would be to A/B the threshold and compare ad revenue retained against subscription revenue forgone. ⚠️ Don't claim a measured result — the code only tells us the rule exists, not that its business impact was validated.
-
----
-
-⚠️ Cross-cutting risk points (hand back honestly, don't over-claim):
-- The **per-user lock**, the **Apple webhook handler + Google Pub/Sub consumer**, the **base state machine**, and **Stripe SKU creation** are NOT mine (teammates'). Explain them fully as context, but on "did you build X" → "that's existing infra; my part was the ordering guard / billing-retry state / product-config layer." Explaining ≠ claiming.
-- **No measured retention lift** for billing-retry, and **no measured impact** for the high-revenue rule — describe intent, don't quote invented numbers.
-- **Actual test coverage is unverified** — don't claim a replay harness or specific test suite unless it's real.
-- The **behavior-triggered upsell paywalls are mostly turned off** in prod — framework built, not rolled out.
+*Who set $50, and how do you know it's net positive?* — Honest: $50 is a hardcoded threshold; I can't claim I set the number or that there's a live measurement loop tuning it. The right way to know it's net-positive would be to A/B the threshold and compare ad revenue retained against subscription revenue forgone.
 
 **Takeaway options** (pick per wording; default first):
 1. (default) "What stuck with me was that the hard part of subscriptions is treating the webhook stream as unreliable and designing state that survives it."
