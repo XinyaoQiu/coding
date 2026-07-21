@@ -262,6 +262,7 @@ We own the full lifecycle in the `server` monolith: the `/subscription` purchase
 - Q: The delete-after-write race? — A: Between `updateNbPremiumSubRel`'s Del and a concurrent read repopulating, a reader could momentarily reload a stale value. Mitigations: the per-user lock serializes the mutating side, and reads that matter for freshness (scene=premium_paid) bypass cache entirely. It's a known write-invalidate tradeoff vs write-through.
 - Q: Why per-user redis SetNX lock instead of a mongo txn / optimistic version? — A: The aggregate is one doc per user; contention is only same-user concurrent webhooks. A lightweight `nbprtdnlock:<userID>` SetNX (30s TTL, 3 tries, 500ms*(i+1) backoff) serializes read-modify-write cheaply without a distributed transaction. If not acquired after 3 tries the notification is returned unhandled -> store retries.
 - Q: TTL expires mid-processing, or userID lookup fails? — A: If the 30s TTL lapses mid-work another worker could enter — bounded by the fact writes are idempotent state sets. If AppAccountToken->userID resolves to <=0 the code proceeds WITHOUT a lock — a real correctness hole worth calling out. Read-your-writes: scene=premium_paid and the RTDN handler read PRIMARY (`api_master`), everything else secondary+cache.
+- Q: Any real bug in the lock itself? (code-verified) — A: Yes, a textbook wrong-holder delete. Acquire stores a constant value `"1"` for every holder and release is an unconditional `DEL` with no ownership check (`repository/subscription.go:5053/5058`). Scenario: worker A runs past the 30s TTL (its critical section includes a Google API fetch + several mongo writes), the key auto-expires, worker B acquires the same key and starts processing, then A's deferred release `DEL`s B's lock — so a third worker can now run concurrently with B, breaking mutual exclusion exactly in the slow-processing case the lock exists for. Fix: store a unique per-acquire token and release via a Lua GET-compare-then-DEL. Two related gaps: no TTL renewal/watchdog (30s hard ceiling), and the Apple path skips locking entirely when userID==0. One thing done right: acquire is atomic (go-redis v8 `SetNX` with a non-zero expiry compiles to a single `SET key "1" EX 30 NX`), so there's no setnx-then-expire deadlock window.
 
 ---
 
@@ -459,3 +460,27 @@ We had to make this end-to-end pipeline correct and legible: keep large video by
 最难的是想清楚为什么一维状态不够、要拆成两个正交字段。一开始很自然会想用一个状态枚举描述订阅，但很快发现表达不了 billing-retry 这种情况：扣款失败时，用户的访问权要关掉，但记录绝不能删——因为 Apple 会重试扣款最长 60 天，扣成功了要能原地恢复。这就是一个"访问已关、但订阅还活着可恢复"的状态，一维枚举里放不下：你说它 active 不对（访问关了），说它 expired 也不对（其实还能救）。
 
 所以我们拆成两个正交字段：`status`（paid/free/unsubscribed）是粗粒度访问开关，客户端只读这个判是否解锁；`paid_status`（active/grace_period/billing_retry/cancel）是细粒度账单生命周期。billing-retry 就表达成 `status=unsubscribed`（访问关）+ `paid_status=billing_retry`（记录还活着）。这个设计还有个额外好处：所有下游"status==paid 才给权限"的判断一行代码都不用改就自动把 billing-retry 当作无权限，向后兼容；而需要"知道为什么、能不能救"的挽留流程去读 paid_status。难点就在于把"能不能访问"和"账单处于什么阶段"这两件本来被耦合在一起的事识别出来、拆开——想清楚这个正交分解，后面所有边界状态（取消但没到期、宽限期、扣款重试）就都能干净表达了。
+
+### Q9. premium 系统的技术难点，系统讲清楚
+
+> 这题是 premium 主力故事的"技术深度"总弹药。四个难点层层递进，从表层的并发一路挖到"锁不保证正确性"的分布式系统本质。全部代码核实过。⚠️ 讲锁的 bug 用"我分析代码时发现的缺陷"框，别说成"我 debug 出来的事故"；这些是现有系统缺陷、不是已修复的功劳，被追"修了吗"就说"识别出来了、列进 hardening 清单、还没排上"。
+
+**一句话定位**：这个系统真正的技术难点不在业务逻辑，而在**如何在一个不可靠的输入（乱序、重复、延迟的平台通知）+ 并发的处理环境下，维持每个用户付费状态的正确性**。因为是钱，错了代价大——要么白送权限，要么踢掉付费用户。下面四层，一层比一层深。
+
+**难点一：并发的 read-modify-write race。**
+同一个用户，平台可能极短时间内发来多条通知（扣款失败紧跟重试成功、或一条被重投）。我们的处理是读-改-写：读出当前订阅记录、按事件算新状态、写回。两条通知同时进来，两个 goroutine 同时读到旧记录、各自算各自写，后写覆盖先写。这是最表层的难点，标准解法是加锁串行化。我们用 per-user 的 Redis 锁（`nbprtdnlock:<userID>`，SetNX），粒度是每用户一把，不同用户完全并行、只有同用户的并发才串行，把竞争面压到最小。
+
+**难点二（核心）：带 TTL 的分布式锁根本不保证互斥，所以正确性不能建立在锁上。**
+这是全项目最深的一点。Redis 锁必须设 TTL（我们设 30s），否则持锁进程崩了用户被永久锁死。但 TTL 一设，就有一个根本问题：**如果处理时间超过 TTL，锁会在你还在处理时自动过期**，另一个 worker 就能进来——锁的互斥保证在"处理慢"这个它本该保护的场景下恰恰失效。而我们的临界区里还夹着对 Google 的 API 回查（网络调用，耗时不可控）+ 多次 mongo 读写，在 mongos 压力大时超 30s 完全可达。所以真正的技术认知是：**带超时的分布式锁不是可靠互斥锁（Kleppmann 那篇分布式锁的经典论点），它只能用来减少竞争和重复工作，不能作为正确性的唯一保证。** 我们的正确性实际靠的是**状态写入本身幂等**——即使两个 worker 因锁过期同时进来，重复处理"续费到同一个到期时间"落在同一结果上，没有副作用。难点在于想清楚"锁会失效"，并把系统设计成锁失效时依然正确，而不是假设锁一定生效。
+
+**难点三：这个锁的实现本身有一个教科书级 bug（代码核实）。**
+顺着难点二往下，锁的具体实现有三个真问题：
+- 🔴 **wrong-holder delete（最严重）**：加锁存的 value 是固定的 `"1"`（每个持有者都一样），释放是无条件 `DEL key`，不验证 owner（`repository/subscription.go:5053/5058`）。失败场景：Worker A 处理超过 30s，锁过期；Worker B 抢到同名锁开始处理；A 处理完 `defer` 里 `DEL` 掉的是 **B 的锁**；于是 C 又能抢到、跟 B 并发——互斥在慢处理场景下彻底破掉。正确做法：加锁存唯一 token，释放用 Lua 脚本 GET 比对 token 匹配才 DEL。
+- 🟠 **没有 TTL 续期**：30s 是硬顶，无 watchdog，临界区一超时就静默失去互斥（这是 wrong-holder delete 的前置条件）。修法：后台 goroutine 续期，或用 redsync 这类自带 watchdog 的库。
+- 🟠 **Apple 路径 userId==0 时跳过加锁**：AppAccountToken 查不到 userId 时（只打 Warn），`if userID > 0` 的锁块被整个跳过，通知在零并发保护下处理（`service/subscription.go:2237`）；Google 路径没这个 guard、总是加锁。
+- 唯一做对的：加锁是原子的（go-redis v8 `SetNX` 带非零过期编译成单条 `SET key "1" EX 30 NX`），没有"SETNX 再单独 EXPIRE、中间崩了死锁"的窗口。
+
+**难点四：不可靠事件流上的排序与去重。**
+和并发正交的另一条难点——通知会乱序、重复、延迟几天到达，怎么判"哪个事件才算数"。① 用平台签名的事件时间（不是我们的接收时间，避免多机时钟不同步）做水位线 `LastNotifEventTime`，进来事件比水位线旧就丢；② 光比时间不够，因为重新订阅会产生全新交易号，得结合交易身份判断"同一订阅的新事件 vs 被取代的旧订阅"；③ Google 升降级发新 purchaseToken 但带 linked token 指向旧的，靠它链式关联回老记录，不误判成陌生事件。**主动讲的缺口**：去重是基于时间的、不是基于通知唯一 ID 的；若一条通知被重投且事件时间完全相等，可能被再处理一次——目前靠状态转换幂等兜底，要彻底堵死应在通知 UUID 上再加一层去重。
+
+**为什么四个难点是一个整体**：难点一（并发）暴露出要加锁 → 难点二（锁不可靠）暴露出正确性得靠幂等 → 难点三（锁实现的 bug）是难点二在真实代码里的具体实例 → 难点四（乱序去重）是"什么事件算数"这个正确性问题的另一面，也同样靠"幂等兜底 + 平台重投"收尾。**贯穿始终的一句话：在不可靠输入 + 并发 + 会失效的锁这三重不确定性下，我们不追求任何单一机制的绝对可靠，而是让每个状态写入幂等，用幂等把锁的漏洞、通知的重复、事件的乱序全部软化掉——正确性建立在"重复执行安全"上，而不是建立在"锁一定生效、消息一定不重"上。**
