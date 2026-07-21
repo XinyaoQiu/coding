@@ -12,7 +12,7 @@
 
 生成/修改本文件答案时遵守：
 
-1. **语言**：**正文（Part 1–4）全部是英文可直接念的稿，不含任何中文**（题目 + 答案）。所有中文策略提示集中放在下方「策略提示区」，正文里绝不夹中文。跟用户对话用中文。
+1. **语言**：**正文（Part 1–4）全部是英文可直接念的稿，不含任何中文**（题目 + 答案）。所有中文策略提示集中放在下方「策略提示区」，正文里绝不夹中文。**例外：Part 5「HM 面中文陪练区」是中文 mock 问答陪练稿，不是面试念稿，允许全中文。** 跟用户对话用中文。
 2. **按轮次分块**：文件按 HR 面 / 技术面 / HM 面三大块组织（Part 1/2/3），每块含 自我介绍 + 可能被问的问题 + 反问。可复用的详细故事集中放 Part 4 Story bank，各块问题用 Markdown 内链引用。
 3. **自我介绍三块共用同一底稿**（用户确认）：三轮 self-intro 用同一段，按轮次微调结尾。
 4. **⚠️ TikTok 特点 —— 挖细节**：面试官追问极深，看重具体技术细节 + 量化数据 + 决策链条。Follow-up ammo 区必须做厚做深（机制 / 数字 / 为什么这样选 / 边界失败模式）；量化优先，数字可编；主叙事保持颗粒度克制，实现细节下沉到 follow-up。
@@ -251,6 +251,7 @@ We own the full lifecycle in the `server` monolith: the `/subscription` purchase
 - Q: Why does GRACE_PERIOD_EXPIRED go to billing_retry, not expire? — A: Apple is still in its retry window (comments cite 60 days). EXPIRED is the terminal event; GRACE_PERIOD_EXPIRED just means grace ended but retries continue, so we hold in billing_retry.
 - Q: Why the +2-day extra grace in IsPaidStatusExpired? — A: It's a safety net for lost/late store callbacks. baseExpireAt = max(GraceUtilAt, ExpireAt) + 2 days. Third-party callbacks are preferred; this only fires on the read path so a stale paid record self-heals to unsubscribed if the webhook was dropped — while the +2 days avoids racing a slightly-late legitimate notification.
 - Q: paused? — A: `PaidSubscriptionStatusPaused` exists but `StatusPaidToPaused` currently sets `PaidStatus=billing_retry` with a TODO — clients can't render a real paused state yet, so it reuses billing_retry behavior.
+- Q: What does one record actually store? (code + live-DB verified) — A: The `SubscriptionRelation` struct (`entity/paid_subscription.go`) backs both `nb_premium_subscription` and `subscription_relation`. Fields (bson): `_id`, `user_id`, `media_id`(omitempty), `in_free_trial`, `status`, `paid_status`, `channel`, `subscription_at`, `expire_at`, `grace_util_at`, `external_transaction_id`, `sku`, `metadata`(omitempty), `google_purchase_token`, `linked_purchase_token`, `created_at`, `updated_at`, `updated_source`, `newsletter_synced`(*bool omitempty), `env`(omitempty), `last_notif_event_time`(omitempty), `action_src`(omitempty). Live check: `nb_premium_subscription` holds ~38.7k docs; a real doc has only ~14 keys because omitempty zero-value fields don't persist. Live distinct `status` = {paid, unsubscribed, gift}; live distinct `paid_status` = {'', active, billing_retry, cancel, grace_period}. So billing_retry is real in prod, empty `paid_status` is the terminal 'fully dead' marker, and there's a `gift` access tier beyond paid/free. A real record showing the two-field design: `status=paid` + `paid_status=cancel` = user turned off auto-renew but keeps access until `expire_at`.
 
 ---
 
@@ -377,3 +378,62 @@ We had to make this end-to-end pipeline correct and legible: keep large video by
 1. The whole pipeline is organized around one principle — a single state authority (mp-api MySQL post row) that everyone else reports into or reads live from — which is what makes an inherently async, multi-system lifecycle legible to the creator in near real time.
 2. We de-risked two changes at once by making them non-destructive: anti-abuse shipped observe-only so we validate thresholds on real traffic before enforcing, and the proto migration ran a dual path sharing identical logic so we prove field-level parity before flipping.
 
+
+---
+
+## Part 5 — HM 面中文陪练区（mock 问答，非面试念稿）
+
+> 这一区是中文 mock 陪练：模拟 HM 面顺着 premium 主力故事一层层深挖的问答。**不是面试念的稿**（面试说英文，念稿在 Part 1–4 和 Story 1）。这里记「面试官会怎么问 + 该怎么答」的完整版，方便回顾这条深挖链路怎么走。主力故事 = Story 1 subscription。所有回答用 we 做主语。
+
+### Q1. 讲一下你做的项目吧
+
+我讲订阅系统 —— 我最能从头讲到尾的一个。它有意思的地方在于：我们其实从来不碰钱，真正扣款的是 Apple/Google/Stripe，我们后端唯一知道的就是这些平台事后告诉我们的东西。而通知的到达方式各不相同 —— Apple 把签名通知 POST 到 webhook；Google 只给一个 Pub/Sub 指针，得拿它反查 Google API 才知道发生了什么；而且这些通知会乱序、重复、延迟几天甚至几个月才到（续费、取消、扣款失败、退款都是异步的）。所以真正的难点不是"处理一次付款"，而是在一个不可靠事件流上维持每个用户一份永远正确的订阅状态 —— 因为涉及钱，错了代价很大。
+
+我负责整条链路，分四段：① 购买入口（三平台一个路由组，iOS 两步、Android 一步，核心是信任边界——绝不信客户端原始收据）；② + ③ 异步生命周期（Apple 签名 webhook / Google Pub/Sub pull，写库前都有排序守卫）；④ 落库与状态机（两个正交状态字段，能表达"扣款失败、访问先关、记录留着可恢复"的 billing-retry）；⑤ 结束（取消/到期/退款三种语义）。最后收敛成每个用户一条 Mongo 记录、一个统一写入口，所以幂等/排序/缓存/审计只解决一次。
+
+**交付要点**：opener 不堆 jargon（不报函数名/枚举），钩子留给面试官挖；结尾抛可深挖方向（排序去重 / 双状态字段）。
+
+### Q2. 讲一下整条链路，从用户点击订阅开始，到怎么落库
+
+以 iOS 为例（最完整）：① 用户点订阅，客户端先调 prepare 接口 —— iOS 要两步是因为 Apple StoreKit 要求先由服务端签一个购买请求；prepare 里我们解析出买哪个 SKU + 做前置检查（是否已付费/是否在扣款重试），确认后返回签好名的购买请求。② 客户端拿它走 StoreKit 完成支付，Apple 返回一个签名过的交易凭证（JWS），发给 subscribe 接口。③ 服务端验真 —— 绝不信凭证内容本身，而是验签名：解析证书链做完整 x509 校验，验到我们内置的 Apple 根证书。④ 绑定到人 —— 从交易取出 Apple 账户 token，反查对应 userId，必须跟当前登录一致，否则拒绝（防把别人交易安到自己账号）。⑤ 落库 —— 解析 SKU 类型分流到对应产品，用 upsert 幂等写入 Mongo，每用户一条。Android 略不同，落库后还要回调 Google acknowledge（不确认 Google 会自动退款，ack 失败打 CRITICAL）。
+
+到此"点订阅→落库"完成，但之后续费/取消/退款都是异步走另一条入口，最后收敛到同一条记录、同一个写入口。
+
+### Q3. premium 相关 feature，是通过读数据库判断是否 premium 吗？用什么库存？为什么？
+
+是，但不是每次直接打库，是 cache-first 的。存储是 Mongo —— 每用户一条记录，库 `subscription`，NB Premium 走 `nb_premium_subscription` collection，判断是否 premium 就是读 `status` 字段等于 `paid`。读路径缓存优先：`get-subscription-status` 先查 Redis（key `nbpsr:<userId>`），命中直接返回，没命中回源 Mongo 再回填；真实记录缓存 1 小时，"查无此人"缓存一个 null 哨兵但只存 10 分钟（防缓存穿透）；写侧 delete-after-write。
+
+**为什么用 Mongo**：① 天然是"每用户一份聚合文档"，一条记录嵌了 channel/SKU/交易号/过期时间/两个状态字段等，读一次就是完整实体；② 写竞争极小，只有同用户并发 webhook，没跨行事务需求，用 per-user Redis 锁串行化就够；③ Newsbreak 后端本就大量用 Mongo。**为什么读加缓存**：读写严重不对称——写很少（续费/取消等事件一天量级不大），但"是否 premium"被大量 feature 高频读，热读挡在 Redis，Mongo 只在缓存失效/写入时被碰。
+
+**主动讲的取舍**：delete-after-write 不是 write-through，存在窗口——写完删缓存但另一读请求正好回填旧值。兜底：per-user 锁串行化写侧；真正在意实时性的读路径（付费鉴权）直接读 Mongo 主库、绕开缓存。诚实提醒：如被追"是你选的 Mongo 吗"，说这是既有存储、你在其上做设计，别揽成选型。
+
+### Q4. 续费、取消、扣款失败、退款，这些就是写路径吗？
+
+是，全是写路径，且不走购买那个同步入口——这些是平台异步通知我们的。骨架：**验真 → 排序守卫 → 按事件分发状态语义 → 统一写入口落库**。
+
+入口两个：Apple 签名 webhook / Google Pub/Sub pull。进来先验真（Apple 重验签名；Google 消息只有指针没状态，拿 token 回查 Google API 拿权威状态，后续写以查回的为准）。然后排序守卫（改任何状态前）——每条记录记一个事件时间水位线，进来事件比水位线旧就丢，挡住"旧事件覆盖新状态"。过守卫后按类型分发：续费=刷新过期时间恢复 active；取消（关自动续费）=软结束，`paid_status=cancel` 但过期时间不动、`status` 还是 paid，用到期末；扣款失败=进 billing-retry，访问关掉但记录完整留着（SKU/交易号/过期时间不动），Apple 重试扣款最长 60 天，扣成功一条续费通知就原地恢复；退款/撤销=硬结束立刻收回。最后所有事件收敛到同一个统一写入口：内存改记录 → 唯一私有写方法一次性做三件事（`$set` 更新 Mongo + 删缓存 + 写前后对照审计日志），同用户并发通知用 per-user 锁串行化。
+
+### Q5. 排序守卫具体怎么判乱序/重复？
+
+**用什么时间判**：平台自己签名的事件时间（Apple signedDate / Google eventTime），不是我们的接收时间（避免我们多台服务器时钟不同步）；每条记录存 `LastNotifEventTime` 当水位线，每处理一个事件推进它。
+
+**具体分支**（Apple 守卫，改状态前跑）：① 本地没这条记录 → 只有"新订阅"能创建，其它忽略；② 交易号跟存的同一笔 → 事件时间严格早于水位线判过期跳过，否则处理；③ 交易号不同 → 只有"新订阅"能重新指向（如重新订阅），其它丢；④ 两种已知良性乱序（宽限期到期、关自动续费）标成"跳过但不算异常"，不污染审计。Google 同理，多一层 `LinkedPurchaseToken` 链式关联——升降级/重订阅时 Google 发新 token 但带 linked token 指向旧的，靠它接回已有记录，不误判成陌生事件。
+
+**主动讲的缺口**：去重是基于时间的，不是基于通知唯一 ID。若一条通知被重投且事件时间完全相等，不会"严格早于"水位线，可能被再处理一次。目前没事是因为状态转换本身幂等（重复处理"续费到同一过期时间"落在同一处）。要彻底堵死应在通知唯一 ID（NotificationUUID，日志表里其实存了）上再加一层去重——列进 hardening 清单。
+
+### Q6. 怎么判断"本地还没有这条记录"？
+
+关键是用什么 key 去 Mongo 查。**Apple 侧用 `originalTransactionId`**——同一条订阅一生不变的 ID（续费/宽限/恢复都是同一个，只有重新订阅才换），拿它匹配记录里的 `external_transaction_id`，查到非空、查不到就是 nil（本地还没有）。**为什么不用 userId 查**：Apple server-to-server 通知不带我们的登录态，异步链路只能靠交易身份定位，不能靠人（购买那条同步链路才有登录态，靠 AppAccountToken 反查 userId 绑定）。Google 侧类似，用 purchaseToken + LinkedPurchaseToken 链式关联匹配 `google_purchase_token`。
+
+"记录不存在"时守卫规则：只有"新订阅"(SUBSCRIBED)能创建，其它事件（续费/取消/退款）直接忽略——一个续费事件连原始记录都没有，一定是乱序或异常，不该凭它凭空造记录。这也兜住了"续费比新订阅先到"的乱序：续费先到、记录不存在就丢掉，等新订阅到才建，靠"只有 SUBSCRIBED 能创建"+ 平台会重投。
+
+### Q7. Mongo 里一条记录存了什么？（code + 实查双验证）
+
+`SubscriptionRelation` struct（`entity/paid_subscription.go`）同时背 `nb_premium_subscription` 和 `subscription_relation` 两个 collection。完整字段（bson）：`_id`、`user_id`、`media_id`、`in_free_trial`、`status`、`paid_status`、`channel`、`subscription_at`、`expire_at`、`grace_util_at`、`external_transaction_id`、`sku`、`metadata`、`google_purchase_token`、`linked_purchase_token`、`created_at`、`updated_at`、`updated_source`、`newsletter_synced`、`env`、`last_notif_event_time`、`action_src`。
+
+**实查结果**（连 stage 同集群实查 `nb_premium_subscription`）：
+- 规模 ~38,712 条。
+- 真实文档只有 ~14 个 key——带 omitempty 的字段零值时不落库，所以"记录存什么"取决于走过哪些路径。
+- 线上实际 `status` 值 = {paid, unsubscribed, gift}（多了个 `gift` 赠送层，光看代码没确认到）。
+- 线上实际 `paid_status` 值 = {'', active, billing_retry, cancel, grace_period}——印证 billing_retry 真在生产用；空字符串 `''` = terminal"彻底结束"标记；没有 paused（印证 paused 目前复用 billing_retry）。
+- 一条真实记录印证双字段设计：`status=paid` + `paid_status=cancel` = 用户关了自动续费但保留访问到 `expire_at`。
