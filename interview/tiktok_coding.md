@@ -21,7 +21,7 @@
 3. **三段结构**：每道题固定 **Problem → Walkthrough → Solution**（Solution 里含可跑 tests），顺序不变。
 4. **Walkthrough 要求（⚠️ 本文件重代码，Walkthrough 极简）**：
    - 只需**简单说用什么方法**（如 "two-pointer" / "hash map for prefix sums" / "top-down DP with memo"），**再加时空复杂度**。一到两句即可，不做完整 UMPIRE，不讲暴力解、不讲 edge cases。
-   - 口语化、第一人称（"I'd use…", "The idea is…"）；不含 markdown 格式、不含公式和代码；复杂度念大 O 英文（"linear time, constant space"），不写 `O(n)` 符号。
+   - 口语化、第一人称（"I'd use…", "The idea is…"）；不含 markdown 格式；复杂度写 `O()` 符号（如 `O(n)` / `O(m·n·3^L)`），变量不用解释。
 5. **Python solution 要求**：干净可跑的标准解法；注释最多一行、能不写就不写（沿用 CLAUDE.md 规范）；变量名可读。
 6. **Tests 要求**：见第 2 条。测试要真能跑通对应 solution（函数名/签名一致）。
 7. **收录范围**：只收用户明确指定要准备的题，不擅自加题。
@@ -65,7 +65,7 @@ Given an integer array, return the most frequent element. If there's a tie in fr
 
 **Walkthrough**
 
-I'd use a hash map to count each number's frequency, then do one pass over the counts, keeping the highest frequency and breaking ties by the smaller value. The key detail is the tie logic — I update when the frequency is strictly higher, or when it's equal but the value is smaller, and those two conditions must be separate, not combined with an and. Counting is linear and the scan is linear, so linear time and linear space.
+I'd use a hash map to count each number's frequency, then do one pass over the counts, keeping the highest frequency and breaking ties by the smaller value. The key detail is the tie logic — I update when the frequency is strictly higher, or when it's equal but the value is smaller, and those two conditions must be separate, not combined with an and. Counting is one pass and the scan is one pass, so O(n) time and O(n) space.
 
 **Solution**
 
@@ -102,7 +102,7 @@ Given an N-ary tree where each node has a value, in one operation you may increa
 
 **Walkthrough**
 
-Since I can only add to leaves, every root-to-leaf path has to be raised up to the largest one, so this is a post-order DFS, essentially tree DP. Each call returns the maximum root-to-leaf sum of its subtree; at every internal node I look at what its children return, take the max, and add up how far each child falls short of that max into a running total of operations, then return the node's own value plus that max so the parent can do the same. Doing it bottom-up like this, aligning each node's children locally, is equivalent to raising every path to the global maximum. It's one visit per node, so linear time, and the space is the recursion depth, which is the height of the tree.
+Since I can only add to leaves, every root-to-leaf path has to be raised up to the largest one, so this is a post-order DFS, essentially tree DP. Each call returns the maximum root-to-leaf sum of its subtree; at every internal node I look at what its children return, take the max, and add up how far each child falls short of that max into a running total of operations, then return the node's own value plus that max so the parent can do the same. Doing it bottom-up like this, aligning each node's children locally, is equivalent to raising every path to the global maximum. It's one visit per node, so O(n) time, and the space is O(h) for the recursion stack, where h is the height of the tree.
 
 **Solution**
 
@@ -154,7 +154,7 @@ Given an m by n grid of `'1'` (land) and `'0'` (water), return the number of isl
 
 **Walkthrough**
 
-DFS flood-fill: scan the grid, and each time I hit unvisited land I bump the count and DFS the whole connected landmass, marking cells in place so I don't recount. Linear time in the number of cells; worst-case space is order m times n from the recursion depth when the whole grid is one island.
+DFS flood-fill: scan the grid, and each time I hit unvisited land I bump the count and DFS the whole connected landmass, marking cells in place so I don't recount. O(m·n) time; worst-case O(m·n) space from the recursion depth when the whole grid is one island.
 
 **Solution**
 
@@ -205,7 +205,7 @@ if __name__ == "__main__":
 
 **Follow-up A — Island areas and boundaries (variant)**
 
-For each island, return a pair of its area (number of land cells) and its boundary — here defined as the count of distinct water cells it touches (out-of-grid edges not counted). Same DFS flood-fill: area comes up as the return value (one plus the children's), and adjacent water cells go into a per-island set so repeated touches count once. Linear time; space order m times n for the recursion stack plus the water set.
+For each island, return a pair of its area (number of land cells) and its boundary — here defined as the count of distinct water cells it touches (out-of-grid edges not counted). Same DFS flood-fill: area comes up as the return value (one plus the children's), and adjacent water cells go into a per-island set so repeated touches count once. O(m·n) time; O(m·n) space for the recursion stack plus the water set.
 
 ```python
 def island_areas_and_boundaries(grid):
@@ -248,7 +248,7 @@ if __name__ == "__main__":
 
 **Follow-up B — Number of Distinct Islands (LeetCode 694)**
 
-Count islands with distinct shapes, where two are the same if one can be translated (not rotated/reflected) onto the other. DFS with a canonical signature: record each cell's offset relative to the island's first-visited cell and store the offset sequence in a set — the set size is the answer; a fixed direction order makes translation-equivalent islands produce identical signatures. Linear time; space order m times n.
+Count islands with distinct shapes, where two are the same if one can be translated (not rotated/reflected) onto the other. DFS with a canonical signature: record each cell's offset relative to the island's first-visited cell and store the offset sequence in a set — the set size is the answer; a fixed direction order makes translation-equivalent islands produce identical signatures. O(m·n) time; O(m·n) space.
 
 ```python
 def num_distinct_islands(grid):
@@ -292,7 +292,7 @@ if __name__ == "__main__":
 
 **Follow-up C — Number of Islands II (LeetCode 305): streaming addLand, or grid too big for memory**
 
-Land is added one cell at a time and after each add we report the island count; also the answer if the grid is too large to hold in memory with sparse land. Union-find keyed by a dict of only the land cells: each new cell starts as its own component (count up one), then union with any of its four already-land neighbors (count down one per successful merge); a dict key doubles as the land-existence and out-of-bounds check. Near-constant time per operation with path compression, so order k times inverse-Ackermann overall; space proportional to the number of land cells, not the grid area — which is exactly what lets it scale past a grid that won't fit.
+Land is added one cell at a time and after each add we report the island count; also the answer if the grid is too large to hold in memory with sparse land. Union-find keyed by a dict of only the land cells: each new cell starts as its own component (count up one), then union with any of its four already-land neighbors (count down one per successful merge); a dict key doubles as the land-existence and out-of-bounds check. Near-constant time per operation with path compression, so O(k·α(k)) overall; O(L) space in the number of land cells, not the grid area — which is exactly what lets it scale past a grid that won't fit.
 
 ```python
 def num_islands2(m, n, positions):
@@ -341,7 +341,7 @@ Given an m by n board of characters and a list of words, return all words in the
 
 **Walkthrough**
 
-Build a Trie from the word list, then DFS the board from every cell walking down the Trie in lockstep — prune the moment a character isn't in the current node, and collect the word when I hit an end marker. The Trie matches all words in one board traversal with shared prefixes instead of searching per word. Time is order cells times four times three to the max-word-length in the worst case; space is the total characters in the Trie plus the recursion depth.
+Build a Trie from the word list, then DFS the board from every cell walking down the Trie in lockstep — prune the moment a character isn't in the current node, and collect the word when I hit an end marker. The Trie matches all words in one board traversal with shared prefixes instead of searching per word. O(m·n·3^L) time worst case; O(W) space for the Trie plus O(L) recursion depth.
 
 **Solution**
 
