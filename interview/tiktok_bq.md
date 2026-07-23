@@ -357,6 +357,15 @@ We had to make this end-to-end pipeline correct and legible: keep large video by
 - Q: The stuck-posting job holds a Redis lock with TTL = its 10-min interval — what if a run exceeds 10 min? — A: the lock auto-expires and a second pod could start concurrently. It's tolerable because the work is itself idempotent (compare-and-set force-fail), but it's a real concurrency window; a longer lock TTL or lock renewal would be the fix.
 - Q: Trace a duplicate-video publish end to end. — A: transcode result → duplicateVideo() finds dupPostId → updateReasonStateIf(POST_DUP=9, 'duplicate video', POSTING) + updateVideoDuplication(true) + inbox notice → invalidateNewPostCache → on read-back the row appears as a super_fresh_video placeholder with mp_state=9 → server maps to 'duplicate' banner.
 - Q: Why skip NBScore recompute for source=doughnut? — A: doughnut (high-check) audits already scored the content, so recomputing is wasted work; bagel (creator-update-triggered) audits still need it. Misclassifying doughnut as bagel would just recompute redundantly — waste, not corruption.
+- Q: Who INITIATES the audit — does mp-api just receive results, or push? (code-verified) — A: mp-api actively initiates it. After the doc is created and doc_id persisted, `CallbackService.cppSuccess` does `if (auditStatus == UNREVIEWED) postService.SendToAuditQueue(postId, docId, mediaId)`, which PUSHES the audit request to a Kafka `auditRequestTopic` (variants: default / community / high). The audit teams (doughnut = high/machine check, bagel = creator-update-triggered) are the SOURCES of the verdict, which comes back on a SEPARATE topic `mp_audit_result` consumed by `processAuditResult`. So it's a request/response over two distinct Kafka topics — mp-api pushes the request, consumes the result — not just passive receipt.
+
+---
+
+**Deep-dive — CPP is a general content platform, and where transcode/doc_id come from**
+
+- Q: Is CPP video-specific? — A: No — CPP (cpp-launcher) is the GENERAL doc-ingest platform for ALL content: ~21 Kafka-in/Kafka-out pipelines, every one emitting schema subject=document. News, short_post, com_post, comments, AIGC, i18n, and video all flow through it; video is just one ctype (native_video/has_video). mp-api produces the platform-side post for every type and sends them to CPP over the `mp_news` topic (the news-mp chain). `/post/publish_ugc_video` only differs by setting ctype=native_video after transcode merge, then joins the same insertPost→sendDocument→CPP→callback→audit flow as everything else.
+- Q: How is doc_id generated and how does it reach mp-api? — A: doc_id is the doc's `_id`, minted on the CPP/doc-store side (not mp-api). It comes back as the `_id` field in the Kafka `mp_callback` payload (`CallbackService` reads `data.get("_id")`), and mp-api persists it via `updateDocId` → `UPDATE post SET doc_id=..., state=IfNull(state), audit_status=... WHERE id=postId` (the IfNull guards a user DELETE from being resurrected).
+- Q: Cloud transcode or self-hosted? — A: Cloud-first. Transcode is a separate service — the video-platform (Python) — where AWS MediaConvert is the primary transcoder (every S3 upload event schedules a `create_job`, output to `s3://.../transcodes/{vuid}/default.mp4`); self-hosted ffmpeg is only a fallback when MediaConvert fails, plus thumbnails (mjpeg) and letterbox/cropdetect probing. AWS Transcribe does speech-to-text captions. Results flow back via HTTP `update_state` to video-feed-server + Kafka, landing in the doc's `VideoMetaData.TransCodes` (a format→CDN-URL map the server picks the best URL from at feed time). Note: presign/init_upload lives in a DIFFERENT service (video-feed-server), not the transcode video-platform.
 
 ---
 
@@ -467,6 +476,8 @@ We had to make this end-to-end pipeline correct and legible: keep large video by
 
 > premium 主力故事讲"技术难点"的核心叙事，用**演进式**讲——简单实现 → 遇到一类问题 → 加一个机制 → 又遇到下一类 → 再加。这几类问题本来就在同一个通知处理函数里，所以一口气讲完整。踩坑 PR#3632 嵌在乱序那步。跨交易那步：交易号身份判断 + 交易号对不上时回调 Apple 裁决当前 active（按用户确认，此处按"已做"讲）。CAS 不主动讲、被问才答（口径见末尾）。
 
+**开场（先交代 project 是什么、难点在哪，20 秒）**：我在 premium 订阅系统里负责处理 Apple 和 Google 的平台事件——用户订阅（记录 `status` 置成 paid）、续费（保持 paid）、取消（`paid_status` 变 cancel，但 `status` 还是 paid 用到期末）、扣款失败（进 `paid_status` = grace_period 还留着访问，或 billing_retry 关掉访问但记录可恢复）、退款/到期（`status` 变 unsubscribed/free）这些，平台都以事件通知的形式发给我们，我要把这些事件同步成我们这边每个用户当前的订阅状态。这里状态用两个字段：`status`（paid/free/unsubscribed，客户端读它判能不能访问）和 `paid_status`（active/grace_period/billing_retry/cancel，记账单细节）。难点在于这些平台事件**乱序、重复、延迟到达，而且会跨多笔交易**，所以核心挑战不是"处理一条事件"，而是"在这样一个不可靠的事件流上，始终维持每个用户正确的状态"。下面我按遇到问题的顺序讲这套是怎么一步步演进出来的。
+
 我会把它讲成一个一步步演进的故事，因为这套东西不是一开始就想全的，是在同一个通知处理函数里，遇到一类问题就加一层。
 
 **第一步，最简单的实现。** 收到 Apple/Google 的通知，就读出这个用户的订阅记录、根据通知算出新状态、写回去。先跑起来。
@@ -481,6 +492,36 @@ We had to make this end-to-end pipeline correct and legible: keep large video by
 
 **第五步，发现重复问题。** 平台会重投通知（我们一时没返回成功它就重发）。串行加时序判断能挡住大部分重复——重投的那条时间不比水位线新，会被丢。但更稳的是做一层显式幂等：用平台通知自带的唯一 id（Apple 的 notificationUUID、Google 的 message id）当幂等键，处理前先占位。我放在 Redis，用 `SET idem:{uuid} NX EX`（带几天的 TTL），这条命令原子地"没见过才占位"，占位成功才处理、撞了直接跳过。放 Redis 而不是数据库，是因为一条 SetNX 就够、还能自动过期，比在数据库建唯一索引轻；代价是 Redis 万一丢了可能漏一次，但状态写本身幂等，漏一次也没副作用。
 
-**收尾**：所以这套演进下来，是"锁管并发、事件时间水位线管乱序、交易号身份加平台裁决管跨交易、UUID 幂等管重复"，几个正交的机制各挡一类问题。真正的难点不在任何单个机制，而在于意识到：我们完全依赖一个乱序、重复、延迟、还跨多笔交易的平台通知流，要让每个用户的付费状态始终正确——这是个没有单点解法的系统性问题。
+**收尾**：所以这套演进下来，是"锁管并发、事件时间水位线管乱序、交易号身份加平台裁决管跨交易、UUID 幂等管重复"，几个正交的机制各挡一类问题。这套通知处理现在稳定支撑每天大概一千多条平台事件（Apple/Google/Stripe），而它维护的订阅状态，被下游高频读来判断用户是不是 premium，量级在千万级每天，走的是缓存优先的读路径。真正的难点不在任何单个机制，而在于意识到：我们完全依赖一个乱序、重复、延迟、还跨多笔交易的平台事件流，要让每个用户的付费状态始终正确——这是个没有单点解法的系统性问题。
 
 **被问到"有没有更好的办法 / 为什么用锁"时才答（不主动讲）**：并发和乱序这两块，其实更干净的做法是把判断下沉到 mongo 的条件更新——`findOneAndUpdate` 带一个 `event_time < 我的` 的条件，正确性由数据库单文档原子性保证，就不需要锁了，锁超时那类问题也没了。我考虑过这个方向，当前是用锁实现的，在我们这个量级下工作得很好、没出过问题，所以没有立刻改；规模或并发上来了，这是我会优先演进的方向。不过要注意：CAS 只能解决时间维（同一笔交易谁新谁覆盖），跨交易的归属判断、没记录时谁能建这些业务维，CAS 表达不了，还是得靠业务规则加平台裁决。（⚠️ 口径提醒：CAS 用"当前够用、按需演进"的姿态，别用"代码写完了只能后续评估"那种弱理由。锁的 wrong-holder delete / Lua 那块不主动讲，极小概率被抠锁实现才提。）
+
+### Q10. 讲一个 project + 难点（video upload 全链路，对口"直播治理+审核"组）
+
+> 这是 **video upload 主力故事**，专门对口"直播治理 + 审核 + 偏内部"的组（premium 太 toC、领域不搭）。全链路每一环都代码核实过。anti-abuse middleware 是用户本人写的（git 确认），其余环节讲"我负责的部分 + 系统边界"。讲法：开场交代 project + 难点 → 走链路 → 落到"统一内容平台 + 审核体系"这个架构 sense（治理组爱听）。
+
+**开场（20 秒）**：我负责我们 UGC 视频上传的服务端链路——用户在 App 里录个视频、发布，到它在 feed 里能播、或者被审核拒掉，中间跨了好几个系统：客户端、我们的 Go server、Java 的媒体平台 mp-api、转码平台、还有内容审核。难点在于**一次上传是一条很长的异步链路**（拿上传许可、直传、转码、内容摄入、审核），用户还盯着"我的视频"页等着看状态从"处理中"变成"已发布"或者"失败/被拒"。所以核心挑战是：**在这条跨多系统的异步链路上，让每个内容的状态始终被一个权威来源正确维护、并近实时地反馈给用户。**
+
+**链路我一步步走**：
+
+1. **拿上传许可**：客户端调 `init-ugc-video-upload`，我这边转手找视频平台的上传入口服务（video-feed-server）要一个 S3 的 presigned URL + 一个 vuid（视频唯一 id），返给客户端。
+
+2. **字节直传 S3**：客户端拿 presigned URL 把**原始视频字节直接 PUT 到 S3**，视频**不经过我们的 server**——server 只是发个 URL 的中介，大文件不占 API tier 带宽。
+
+3. **发布 + 反作弊**：字节传完，客户端调 `add-ugc-video-submission`。这个接口过一个我写的 **anti-abuse 中间件**——它算 IP 的 bot score、做限流，但目前是 **observe-only**：只记录、不真拦，把 geo/ASN/bot 分数这些 ip_info 传给下游。这么设计是因为这套规则是从另一个反滥用服务移植过来的，我想先在真实流量上验证阈值、别误伤正常创作者，再决定要不要开硬拦。然后 server 拿 vuid 拼出视频 URL、注入 ip_info，POST 给 mp-api 的发布接口。
+
+4. **mp-api 落库（状态权威）**：mp-api 是整条链路的**状态权威**——它往 MySQL 的 post 表插一行**元数据**（标题、URL、状态、doc_id、内容类型这些，不存视频字节），初始状态是 POSTING，然后启动异步处理，返回 post_id。
+
+5. **转码**：转码在一个独立的视频平台做，**AWS MediaConvert 为主**（云托管转码，每次 S3 上传自动触发一个转码 job，输出多码率版本回 S3），自己搭的 ffmpeg 只做兜底和缩略图/探测。转码结果（各码率的 CDN URL）最后进到 doc 的元数据里，server 在 feed 渲染时按网络挑最优码率播。
+
+6. **内容摄入（CPP）**：这里有个我觉得值得讲的点——**CPP 不是视频专用的，它是我们统一的内容处理平台**：新闻、短帖、评论、AIGC、视频，所有内容最后都统一成"document"经 CPP 摄入、生成线上可服务的 doc。视频只是其中一个内容类型。CPP 把 doc 做好、分配一个 doc_id，经 kafka 回调 mp-api，mp-api 把 doc_id 写进 post 表、状态翻成 POSTED。
+
+7. **审核**：doc 建好后，**mp-api 主动把它推去审核**（push 到一个审核请求的 kafka topic），审核团队（doughnut 是机审/高优、bagel 是创作者更新触发）判完，结论走**另一条 kafka topic** 回到 mp-api，更新审核状态；如果被拒，就发拒绝站内信、把内容下线。注意这是**收发分离的两条 kafka 线**——mp-api 主动推请求、被动收结果。
+
+8. **状态回读**：用户进"我的视频"页、下拉刷新、或上传完成时，客户端调 `get-my-ugc-video-list`（不是后台轮询，是用户动作触发）。server **实时拉 mp-api** 拿最新状态（不走中间缓存，因为这个页面最需要新鲜），把 mp-api 内部的两套枚举（处理状态 mp_state、审核状态 audit_status）翻译成用户看得懂的 banner（处理中 / 失败 / 重复 / 审核中 / 已拒 / 上线）。
+
+**收尾 + 难点本质**：所以整条链路的组织原则是——**一个统一的内容平台（所有内容类型统一成 document 走同一条摄入+审核流）+ 一个状态权威（mp-api，别人要么报告进它、要么实时读它）**。真正的难点不在任何单个系统，而在于**让一个跨多系统、异步、还会失败的内容生命周期，对用户始终清晰**：转码可能失败、CPP 可能失败、卡在处理中太久要兜底——这些失败路径我用**同一个 compare-and-set（只在状态还是 POSTING 时才翻）** 统一处理，谁先翻谁生效、天然去重、还不会把用户已经删掉的内容复活。
+
+**几个可深挖的架构点（被追问时展开）**：① 字节不过 server（presign 直传 S3，省带宽）；② CPP 是统一内容平台、video 只是一个 ctype（体现内容治理平台 sense）；③ 审核 mp-api 主动推、结果另一条 kafka 回（收发分离）；④ 转码 cloud-first（MediaConvert 为主、ffmpeg 兜底）；⑤ 三条失败路径用 compare-and-set 去重、不复活删除内容；⑥ 状态实时读不缓存（这个页面新鲜度优先）。
+
+**边界诚实口径**：anti-abuse 中间件是我写的，可深讲；转码平台、CPP、审核团队是下游/别的团队的系统，讲"我通过什么接口跟它们交互"（presign、kafka topic）即可，被问它们内部（怎么转码、怎么审）就答"那是 X 平台/团队的系统，我这边是把内容交过去、接收它们的结果"——清晰边界是加分，不揽别人的代码。
