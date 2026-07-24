@@ -397,6 +397,16 @@ We had to make this end-to-end pipeline correct and legible: keep large video by
 
 > 这一区是中文 mock 陪练：模拟 HM 面顺着 premium 主力故事一层层深挖的问答。**不是面试念的稿**（面试说英文，念稿在 Part 1–4 和 Story 1）。这里记「面试官会怎么问 + 该怎么答」的完整版，方便回顾这条深挖链路怎么走。主力故事 = Story 1 subscription。所有回答用 we 做主语。
 
+### Q0. 自我介绍（中文版）
+
+> 用户自己扩写版（比 Part 1 HR 英文稿详细：多了本科双学位、protobuf 动机、反作弊/上传状态细节、mongo 迁移、ordering guard）。`[Name]` 占位；毕业过去时；on-call 挂 Newsbreak 不是实习；省略 TikTok/UMTRI 两段实习。⚠️ 偏长（~2-3 min），需要短版再另存。
+
+你好，我是 [Name]。我在 UIUC 读的计算机硕士，去年十二月毕业；本科是密大和交大的双学位项目。今年二月份我就在 Newsbreak 做后端工程师——这是一家做本地新闻和 AI 的公司，我在 server 团队。
+
+在这边我主要做了几件事。第一，我把我们核心的一批接口从 JSON 迁到了 Protobuf——这是因为之前开发的时候 server 和客户端都随意往 request 和 response 里塞字段，迁成 Protobuf 之后，server 和客户端就能共用同一份 schema。第二，我负责维护 UGC 视频上传这条链路，写了一层反作弊的中间件，会查 ipinfo 判断是不是异常 IP，同时也有 rate limiter——如果某个 IP 或 userid 短时间内传很多视频就会被限流。另外，我们收到一些用户负反馈：上传视频会卡在 processing，或者上传失败只显示 Failure、没有具体原因。这是因为之前上传状态都存在客户端本地，像审核团队 reject 掉、或者在下游哪一步超时失败，用户都感知不到；所以我把所有状态都收归 server 来控制，再把状态和具体原因下发给客户端。第三，我给我们的 premium 订阅系统做了一些新功能，比如为了适配 Apple Store 的 billing-retry，我给状态机加了个 billing-retry 状态；我还加了一个 ordering guard 函数处理乱序和重复的情况，同时用 redis 锁防止并发冲突。其他的话，我还负责把 Mongo 的一些 DB 从老集群迁到新集群，顺带优化了索引、连接池这些；我也在 on-call 值班里，所以经常去排查线上告警、定位问题的根因。
+
+在 Newsbreak 之前，我在阿里云和特斯拉实习过。阿里云做的是一个大数据处理的 infra，叫 data lake，就是把 log 文件格式化之后通过 MapReduce 存到湖表结构里；特斯拉那边我做的是一个全栈项目，一个类似甘特图的内部工具，用来给 vehicle engineer 安排测试实验。
+
 ### Q1. 讲一下你做的项目吧
 
 我讲订阅系统 —— 我最能从头讲到尾的一个。它有意思的地方在于：我们其实从来不碰钱，真正扣款的是 Apple/Google/Stripe，我们后端唯一知道的就是这些平台事后告诉我们的东西。而通知的到达方式各不相同 —— Apple 把签名通知 POST 到 webhook；Google 只给一个 Pub/Sub 指针，得拿它反查 Google API 才知道发生了什么；而且这些通知会乱序、重复、延迟几天甚至几个月才到（续费、取消、扣款失败、退款都是异步的）。所以真正的难点不是"处理一次付款"，而是在一个不可靠事件流上维持每个用户一份永远正确的订阅状态 —— 因为涉及钱，错了代价很大。
