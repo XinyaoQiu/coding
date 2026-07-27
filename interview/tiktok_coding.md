@@ -394,3 +394,56 @@ if __name__ == "__main__":
     assert find_words([["a", "b"]], ["ab", "ab"]) == ["ab"]              # duplicate word
     print("all tests passed")
 ```
+
+### Q5. Alien Dictionary (LeetCode 269)
+
+**Problem**
+
+There is a new alien language that uses the lowercase English letters, but in an unknown order. You are given a list of `words` sorted lexicographically by that alien language's rules. Return a string of the unique letters in the new order. If the ordering is invalid (e.g. contradictory constraints), or if there is no valid ordering, return `""`. Any valid order is accepted. Example: `["wrt","wrf","er","ett","rftt"]` → `"wertf"`; `["z","x","z"]` → `""` (cycle).
+
+**Walkthrough**
+
+I'd treat it as a topological sort: for each adjacent pair of words, the first position where they differ gives me one "letter A comes before letter B" edge. Then I run Kahn's BFS over that graph, and if I can't emit every letter there's a cycle so I return empty. One trap is the prefix case — if a longer word comes right before its own prefix, like `["abc","ab"]`, that's an invalid ordering. O(C) time where C is the total length of all words; extra space is bounded by the 26-letter alphabet.
+
+**Solution**
+
+```python
+from collections import defaultdict, deque
+
+
+def alien_order(words):
+    adj = defaultdict(set)
+    indeg = {c: 0 for w in words for c in w}
+    for a, b in zip(words, words[1:]):
+        for ca, cb in zip(a, b):
+            if ca != cb:
+                if cb not in adj[ca]:
+                    adj[ca].add(cb)
+                    indeg[cb] += 1
+                break
+        else:
+            if len(a) > len(b):
+                return ""
+    q = deque(sorted(c for c in indeg if indeg[c] == 0))
+    order = []
+    while q:
+        c = q.popleft()
+        order.append(c)
+        for nxt in sorted(adj[c]):
+            indeg[nxt] -= 1
+            if indeg[nxt] == 0:
+                q.append(nxt)
+    return "".join(order) if len(order) == len(indeg) else ""
+
+
+if __name__ == "__main__":
+    assert alien_order(["wrt", "wrf", "er", "ett", "rftt"]) == "wertf"
+    assert alien_order(["z", "x"]) == "zx"
+    assert alien_order(["z", "x", "z"]) == ""          # cycle
+    assert alien_order(["abc", "ab"]) == ""            # prefix longer-first invalid
+    assert alien_order(["a", "b", "c"]) == "abc"
+    assert alien_order(["z"]) == "z"                   # single word
+    assert alien_order(["ab", "adc"]) == "abcd"        # one edge, rest tie-broken
+    assert alien_order(["ac", "ab", "zc", "zb"]) == "aczb"
+    print("all tests passed")
+```
