@@ -374,9 +374,11 @@ Do **not** upgrade "found it passively" into "caught it with proactive monitorin
 
 ### Q7. What do you know about how ads work? / Why ads?
 **Honesty red line: you have no ads background. Don't fake it.** The answer is adjacency plus
-genuine interest, delivered without apology. See `tiktok_ads_domain.md` if written — otherwise
-at minimum know: campaign → ad group → creative; CPM/CPC/oCPM; attribution window;
-click-through vs view-through; conversion API / server-side event tracking; pixel.
+genuine interest, delivered without apology. **Prep from `tiktok_ads_domain.md`** — at minimum
+Part 2 (campaign → ad group → creative), Part 4 (why the platform's numbers and the advertiser's
+numbers never match), and Part 6 (top escalations). The two bridges to rehearse, both honest:
+`event_id` dedup ≡ your `notification_uuid` idempotency key, and advertiser API integrations
+breaking on contract change ≡ your Protobuf migration.
 
 > I'll be straight with you — I haven't worked on ads systems directly, so I'm not going to pretend to depth I don't have.
 >
