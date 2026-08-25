@@ -8,19 +8,21 @@ The interviewer may speak Chinese or English. This file mirrors `tiktok_bq_ch.md
 
 ### Self-intro
 
-Hi, I'm [Name]. I did my CS master's at UIUC and graduated last December. Before that I was in a dual-degree program between the University of Michigan and Shanghai Jiao Tong. Since February this year I've been a backend engineer at Newsbreak — it's a local news and AI company, and I'm on the server team.
+Hi, I'm Xinyao. You can call me Alex. I did my CS master's at UIUC and graduated last December. Before that I was in a dual-degree program between the University of Michigan and Shanghai Jiao Tong. Since February this year I've been a backend engineer at Newsbreak — it's a local news and AI company, and I'm on the server team.
 
-I've worked on a few things there. First, I migrated a batch of our core APIs from JSON to Protobuf. Before that, both the server and the client would just throw whatever fields they wanted into requests and responses. After the migration they share one schema. Second, I own our video upload pipeline. I wrote an anti-abuse middleware that checks IP reputation through ipinfo and does rate limiting. I also made the server become source of truth for the  upload status, instead of in clients local storage, so we can check the real status and reason from media platform and return them to the user. Finally, I built new features for our premium subscription system — I added a billing-retry state to the state machine so it handles Apple's billing retry window. I also wrote the entire handler for Apple notifications, including a guard function for out-of-order and duplicate events. And I used a Redis lock to prevent concurrent writes from stepping on each other. On top of that I migrated some Mongo databases to a new cluster and tuned indexes and connection pools along the way. I'm also in the on-call rotation, so I spend a fair amount of time digging into production alerts and finding root causes.
+I've worked on a few things there. First, I migrated a batch of our core APIs from JSON to Protobuf. Before that, both the server and the client would just throw whatever fields they wanted into requests and responses. After the migration they share one schema. Second, I own our UGC video upload pipeline. I wrote an anti-abuse middleware that checks IP reputation through ipinfo and does rate limiting. I also moved upload status out of the client's local storage and onto the server, so we can send the real status and the actual failure reason back to the user. Third, I built new features for our premium subscription system — I added a billing-retry state to the state machine so it handles Apple's billing retry window, wrote an ordering guard for out-of-order and duplicate events, and used a Redis lock to prevent concurrent writes from stepping on each other. On top of that I migrated some Mongo databases to a new cluster and tuned indexes and connection pools along the way. I'm also in the on-call rotation, so I spend a fair amount of time digging into production alerts and finding root causes.
 
-Before Newsbreak I had two internships. At ByteDance I was on the TTOP team, working with TTLS. I did data dump work and built an in-app booking service so users didn't have to jump out to a third-party app. At Tesla I did a full-stack project, an internal Gantt-chart-style tool for vehicle engineers to schedule range test experiments.
+Before Newsbreak I had two internships. At ByteDance I was on the TTOP team, working with TTLS. I did data dump work — purging expired records from a large third-party travel dataset — and built an in-app booking service so users didn't have to jump out to a third-party app. At Tesla I did a full-stack project, an internal Gantt-chart-style tool for vehicle engineers to schedule test experiments.
 
-### Why are you leaving Newsbreak
+### Why are you looking for a new opportunity
 
-I was laid off. The company and a re-org and I was in scope.
+I'm looking for a bigger stage where my work reaches a much larger audience. Newsbreak has been good to me and I got to own a full pipeline end to end there, which is more scope than most people get in their first year. I'm grateful for that.
 
-That year at Newsbreak I grew a lot, and I'm genuinely grateful they gave me the chance to own a full pipeline end to end. That experience mattered to me.
+But the ceiling on scale is real. I want to work on problems where the traffic and the correctness bar are an order of magnitude higher, and TikTok is at the top of that list for me.
 
-And because I interned at ByteDance, I'm familar with your tools and infrastructure. Also I like my internship experience and ByteDance culture. So I'm really interested in this opportunity.
+I also interned at ByteDance, so I already know the tooling and the infrastructure, and I liked the culture and the pace there. Being able to come back and do this full-time is genuinely exciting.
+
+**Red line:** never criticize Newsbreak, never mention layoffs or re-orgs. Pull factor only — scale and technical bar. If pressed on "why not stay and grow there," answer: the systems I'd want to build next don't exist at that traffic level.
 
 ### Career goals
 
@@ -34,6 +36,22 @@ Going forward I want to keep doing this somewhere with a higher engineering bar,
 
 I'm on F-1 OPT, first year. My major is STEM, so with the extension I have roughly three years I can work legally. Beyond that, if I stay long term, I'd need the company to sponsor an H1B.
 
+### Recruiter screening questions (short answers)
+
+| Question | Answer |
+|---|---|
+| **Job-search timeline / deadlines** | Actively interviewing, no competing deadlines right now, so I have flexibility. I'd like to wrap up within the next month or two. |
+| **Earliest start date** | Within two weeks of an offer. Timing is flexible. |
+| **Current location / relocation** | Mountain View, CA. San Jose is an easy commute, so no relocation needed. |
+| **5 days onsite** | Yes, fully open to it. |
+| **Preferred coding language** | Most comfortable with Go and Python. Prefer Python for the interview. |
+| **Target level** | Targeting IC2, open to whatever level the interviews suggest is the right fit. |
+| **Work authorization** | Yes, authorized on F-1 OPT. |
+| **Sponsorship needed** | Yes — F-1 OPT with STEM extension eligibility, so H-1B sponsorship later. |
+| **Interview availability** | Flexible, can make any slot work, both the U.S. and the China-based windows. |
+
+**Note:** there are two parallel TikTok pipelines — the NG *Backend Software Engineer Graduate (Global E-commerce) - 2027 Start* (status: Evaluation Passed) and this one. Disclose the other pipeline to the recruiter rather than letting them find it.
+
 ### Questions to ask
 
 - "You mentioned the team mainly works on XX — for this role, what would the first six months likely focus on?"
@@ -45,11 +63,11 @@ I'm on F-1 OPT, first year. My major is STEM, so with the extension I have rough
 
 ### Self-intro
 
-Hi, I'm [Name]. I did my CS master's at UIUC and graduated last December. Before that I was in a dual-degree program between the University of Michigan and Shanghai Jiao Tong. Since February this year I've been a backend engineer at Newsbreak — it's a local news and AI company, and I'm on the server team.
+Hi, I'm Xinyao. You can call me Alex. I did my CS master's at UIUC and graduated last December. Before that I was in a dual-degree program between the University of Michigan and Shanghai Jiao Tong. Since February this year I've been a backend engineer at Newsbreak — it's a local news and AI company, and I'm on the server team.
 
 I've worked on a few things there. First, I migrated a batch of our core APIs from JSON to Protobuf. Before that, both the server and the client would just throw whatever fields they wanted into requests and responses. After the migration they share one schema. Second, I own our UGC video upload pipeline. I wrote an anti-abuse middleware that checks IP reputation through ipinfo and does rate limiting. I also moved upload status out of the client's local storage and onto the server, so we can send the real status and the actual failure reason back to the user. Third, I built new features for our premium subscription system — I added a billing-retry state to the state machine so it handles Apple's billing retry window, wrote an ordering guard for out-of-order and duplicate events, and used a Redis lock to prevent concurrent writes from stepping on each other. On top of that I migrated some Mongo databases to a new cluster and tuned indexes and connection pools along the way. I'm also in the on-call rotation, so I spend a fair amount of time digging into production alerts and finding root causes.
 
-Before Newsbreak I had three internships. At ByteDance I was on the TTOP team, working with TTLS. I did data dump work — processing third-party travel and hotel data, comparing it against historical data and removing the parts that had diverged. I also built an in-app booking service so users didn't have to jump out to a third-party app. At Alibaba Cloud I worked on big data infrastructure, a data lake — formatting log files and storing them into lake tables through MapReduce. At Tesla I did a full-stack project, an internal Gantt-chart-style tool for vehicle engineers to schedule test experiments.
+Before Newsbreak I had two internships. At ByteDance I was on the TTOP team, working with TTLS. I did data dump work — processing third-party travel and hotel data, comparing it against historical data and purging the expired records. I also built an in-app booking service so users didn't have to jump out to a third-party app. At Tesla I did a full-stack project, an internal Gantt-chart-style tool for vehicle engineers to schedule test experiments.
 
 I mostly work in Go. Really looking forward to this — let's get started.
 
@@ -149,11 +167,11 @@ Asking the AI for a full solution is fine and expected — what's graded is what
 
 ### Self-intro
 
-Hi, I'm [Name]. I did my CS master's at UIUC and graduated last December. Before that I was in a dual-degree program between the University of Michigan and Shanghai Jiao Tong. Since February this year I've been a backend engineer at Newsbreak — it's a local news and AI company, and I'm on the server team.
+Hi, I'm Xinyao. You can call me Alex. I did my CS master's at UIUC and graduated last December. Before that I was in a dual-degree program between the University of Michigan and Shanghai Jiao Tong. Since February this year I've been a backend engineer at Newsbreak — it's a local news and AI company, and I'm on the server team.
 
 I've worked on a few things there. First, I migrated a batch of our core APIs from JSON to Protobuf. Before that, both the server and the client would just throw whatever fields they wanted into requests and responses. After the migration they share one schema. Second, I own our UGC video upload pipeline. I wrote an anti-abuse middleware that checks IP reputation through ipinfo and does rate limiting. I also moved upload status out of the client's local storage and onto the server, so we can send the real status and the actual failure reason back to the user. Third, I built new features for our premium subscription system — I added a billing-retry state to the state machine so it handles Apple's billing retry window, wrote an ordering guard for out-of-order and duplicate events, and used a Redis lock to prevent concurrent writes from stepping on each other. On top of that I migrated some Mongo databases to a new cluster and tuned indexes and connection pools along the way. I'm also in the on-call rotation, so I spend a fair amount of time digging into production alerts and finding root causes.
 
-Before Newsbreak I had three internships. At ByteDance I was on the TTOP team, working with TTLS. I did data dump work — processing third-party travel and hotel data, comparing it against historical data and removing the parts that had diverged. I also built an in-app booking service so users didn't have to jump out to a third-party app. At Alibaba Cloud I worked on big data infrastructure, a data lake — formatting log files and storing them into lake tables through MapReduce. At Tesla I did a full-stack project, an internal Gantt-chart-style tool for vehicle engineers to schedule test experiments.
+Before Newsbreak I had two internships. At ByteDance I was on the TTOP team, working with TTLS. I did data dump work — processing third-party travel and hotel data, comparing it against historical data and purging the expired records. I also built an in-app booking service so users didn't have to jump out to a third-party app. At Tesla I did a full-stack project, an internal Gantt-chart-style tool for vehicle engineers to schedule test experiments.
 
 Out of all of these, the one I can walk through end to end is the premium subscription system. If that works for you, I'd like to start there.
 
