@@ -644,4 +644,21 @@ def solution(nums, k):
         ans += mp[run - k]
         mp[run] += 1
     return ans
-    
+
+def solution(grid, k):
+    m, n = len(grid), len(grid[0])
+    dirs = [(0, -1), (-1, 0), (0, 1), (1, 0)]
+    q = deque([(0, 0, 0, 0)])
+    visited = set([(0, 0, 0)])
+    while q:
+        i, j, used, step = q.popleft()
+        if (i, j) == (m - 1, n - 1):
+            return step
+        for di, dj in dirs:
+            ni, nj = i + di, j + dj
+            if 0 <= ni < m and 0 <= nj < n:
+                nused = used + grid[ni][nj]
+                if nused <= k and (ni, nj, nused) not in visited:
+                    visited.add((ni, nj, nused))
+                    q.append((ni, nj, nused, step + 1))
+    return -1        
