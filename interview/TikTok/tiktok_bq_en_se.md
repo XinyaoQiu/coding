@@ -31,15 +31,9 @@ Before Newsbreak I had two internships. At ByteDance I was on the TTOP team, wor
 
 ### Why are you looking for a new opportunity
 
-I'm looking for a bigger stage where my work reaches a much larger audience. Newsbreak has been good to me and I got to own a full pipeline end to end there, which is more scope than most people get in their first year. I'm grateful for that.
+I've learned a lot at Newsbreak and built a few backend projects there. What I want next is to do user-facing work on a much bigger and more complex system, and that's why I'm interested in TikTok. It's an innovative, fast-growing company, so I think I'd have a lot more room to grow.
 
-But the ceiling on scale is real. I want to work on problems where the traffic and the correctness bar are an order of magnitude higher, and TikTok is at the top of that list for me.
-
-I also interned at ByteDance, so I already know the tooling and the infrastructure, and I liked the culture and the pace there. Being able to come back and do this full-time is genuinely exciting.
-
-And specifically for this role — the work I've enjoyed most has been the parts where I'm the bridge between a system and the people relying on it. Doing that for advertisers, where the technical problem and the business impact sit right on top of each other, is something I'd find a lot more motivating than staying purely internal.
-
-**Red line:** never criticize Newsbreak, never mention layoffs or re-orgs. Pull factor only — scale and technical bar. If pressed on "why not stay and grow there," answer: the systems I'd want to build next don't exist at that traffic level.
+I also interned on the TikTok Open Platform team last summer, so I already know the internal tools and the tech stack, and I really liked the culture.
 
 ### Career goals
 
