@@ -35,46 +35,13 @@ I've learned a lot at Newsbreak and built a few backend projects there. What I w
 
 I also interned on the TikTok Open Platform team last summer, so I already know the internal tools and the tech stack, and I really liked the culture.
 
-### Career goals
+### Why are you applying for a solutions engineer role
 
-I want to stay close to real systems, but I've realized the part I enjoy most isn't writing the code in isolation — it's being the person who connects a technical system to the people who depend on it.
-
-That's actually what most of my work has looked like. The Protobuf migration was really about a contract between us and every client consuming our APIs, and my job was making sure none of them broke. Moving upload status onto the server started from support tickets — users couldn't tell what happened to their own videos. And when I'm on call, half the work is investigation and the other half is explaining to whoever's affected what broke and what it means for them.
-
-So this role reads to me like the natural version of what I already gravitate toward: deep enough technically that I'm debugging real API and backend problems, but pointed outward at customers instead of only inward at the codebase. That's the direction I want to grow in.
-
-**Adaptation note:** the SWE version of this answer says "go deep on distributed systems, not looking to switch tracks." Do NOT use that here — it argues against the role. The pivot is honest: reframe existing work around its customer-facing edge, don't invent new experience.
+The recruiter reached out about it. When I read the role, what stood out was the part about being the technical person the customer actually talks to, and that's the part of my current job I like most.
 
 ### Work authorization
 
 I'm on F-1 OPT, first year. My major is STEM, so with the extension I have roughly three years I can work legally. Beyond that, if I stay long term, I'd need the company to sponsor an H1B.
-
-### Recruiter screening questions (short answers)
-
-| Question | Answer |
-|---|---|
-| **Job-search timeline / deadlines** | Actively interviewing, no competing deadlines right now, so I have flexibility. I'd like to wrap up within the next month or two. |
-| **Earliest start date** | Within two weeks of an offer. Timing is flexible. |
-| **Current location / relocation** | Mountain View, CA. San Jose is an easy commute, so no relocation needed. |
-| **5 days onsite** | Yes, fully open to it. |
-| **Preferred coding language** | Most comfortable with Go and Python. Prefer Python for the interview. |
-| **Target level** | Targeting IC2, open to whatever level the interviews suggest is the right fit. |
-| **Work authorization** | Yes, authorized on F-1 OPT. |
-| **Sponsorship needed** | Yes — F-1 OPT with STEM extension eligibility, so H-1B sponsorship later. |
-| **Interview availability** | Flexible, can make any slot work, both the U.S. and the China-based windows. |
-
-**On the parallel NG application.** There's also an NG *Backend Software Engineer Graduate
-(Global E-commerce) - 2027 Start* application sitting at "Evaluation Passed" with no recruiter
-contact and no interview. **Don't raise it unprompted** — different pipeline, different req, and
-volunteering it only invites "so which one do you actually want." If they bring it up:
-
-> Yes, I applied to a graduate role earlier, but that one is for a 2027 start and I haven't heard back on it. I'm looking to make a move sooner than that, so this role is what I'm actively focused on.
-
-### Questions to ask
-
-- "For this role, what does the split look like between hands-on engineering and working directly with advertisers?"
-- "Who are the main customers the team supports — large brands, agencies, self-serve advertisers?"
-- "What do the next steps in the process look like?"
 
 ---
 
@@ -82,13 +49,13 @@ volunteering it only invites "so which one do you actually want." If they bring 
 
 ### Self-intro
 
-Hi, I'm Xinyao. You can call me Alex. I did my CS master's at UIUC and graduated last December. Before that I was in a dual-degree program between the University of Michigan and Shanghai Jiao Tong. Since February this year I've been a backend engineer at Newsbreak — it's a local news and AI company, and I'm on the server team.
+Hi, my name is Xinyao. I did my CS master's at UIUC and graduated last December.
 
-I've worked on a few things there. First, I migrated a batch of our core APIs from JSON to Protobuf. Before that, both the server and the client would just throw whatever fields they wanted into requests and responses. After the migration they share one schema. Second, I own our UGC video upload pipeline. I wrote an anti-abuse middleware that checks IP reputation through ipinfo and does rate limiting. I also moved upload status out of the client's local storage and onto the server, so we can send the real status and the actual failure reason back to the user. Third, I built new features for our premium subscription system — I added a billing-retry state to the state machine so it handles Apple's billing retry window, wrote an ordering guard for out-of-order and duplicate events, and used a Redis lock to prevent concurrent writes from stepping on each other. On top of that I migrated some Mongo databases to a new cluster and tuned indexes and connection pools along the way. I'm also in the on-call rotation, so I spend a fair amount of time digging into production alerts and finding root causes.
+This year I've been a backend engineer on the server team at NewsBreak, a local news and AI company. I migrated our core APIs from JSON to Protobuf. And I developed some new features for the video upload pipeline. Then, for premium subscriptions I wrote the handler for Apple's notifications, including the logic for duplicate and out of order events.
 
-Before Newsbreak I had two internships. At ByteDance I was on the TTOP team, working with TTLS. I did data dump work — processing third-party travel and hotel data, comparing it against historical data and purging the expired records. I also built an in-app booking service so users didn't have to jump out to a third-party app. At Tesla I did a full-stack project, an internal Gantt-chart-style tool for vehicle engineers to schedule test experiments.
+I did backend internships at ByteDance and Tesla. I'm familiar with ByteDance's tech stack and internal tools.
 
-I mostly work in Go day to day, and I'm comfortable in Python too. Really looking forward to this — let's get started.
+ I built an AI assistant for content publishers at NewsBreak, and I spent a lot of time on customer problems. I found it interesting. That's why a solutions engineer role appeals to me.
 
 ### Phrases
 
@@ -140,45 +107,10 @@ I mostly work in Go day to day, and I'm comfortable in Python too. Really lookin
 6. Finding a new edge case while coding doesn't cost you anything. **Attribute it to the structure of the code**, not to "I forgot."
 7. Alternate, don't parallelize — think 20 seconds, say it out loud, think another 20.
 
-### Prompts (AI-assisted round)
-
-Asking the AI for a full solution is fine and expected — what's graded is what you do after you get it. **AI generates options, you decide; AI implements decisions, you verify.**
-
-| Situation | What to ask the AI |
-|---|---|
-| **Clarifying the problem** | "Split this into two parts: what the statement explicitly says, and what it does NOT say but would change the implementation. Questions only — don't answer them for me." |
-| **Structure named in the problem** | "The statement mentions a \<DAG/tree/cache\>. What makes it necessary? If removing it leaves behavior unchanged, say so." |
-| **Checking your own reading** | "My reading: given ___, calling ___ returns ___. Does that contradict the statement?" |
-| **Stuck on approach** | "Don't write code yet. Give me 2-3 approaches with complexity for each, and the key insight behind the efficient one." |
-| **Ready to implement** | "Implement `def f(...)` using \<your approach\>. Constraints: ___. Handle ___." |
-| **Don't understand a line** | "What does line N do, and what breaks if I remove it?" |
-| **Before trusting the code** | "What inputs would break this? List the assumptions you're least sure about." |
-| **Strongest verification** | "Write an obviously-correct slow version plus a random input generator, and diff them over a few thousand cases." |
-| **Proving tests discriminate** | "Invert the comparison on line N so I can confirm that test goes red." |
-| **Final sweep** | "Any dead code, any test that can never fail, anything the tests don't cover?" |
-
-**Two things to do yourself, not via prompt**
-
-| When | Do |
-|---|---|
-| After the design discussion, **before** any code exists | Hand-write 4-5 `assert` lines — your contract. Tests written after an implementation encode what the code *does*, not what it *should* do. |
-| At least once, in your own terminal | Run it. Never accept "all tests passed" as reported. |
-
-**Anti-patterns**
-
-| Don't | Why |
-|---|---|
-| "How do I solve this?" → paste → "done" | The one genuinely fatal move |
-| Ask AI to write a tech design first | You end up reviewing its architecture instead of authoring your own |
-| Re-prompt the same thing when AI is wrong | Fix it by hand — repeated re-prompting is a strong negative signal |
-| Accept reported test results | Treat the tool as suspect — that's the whole point of the format |
-| Only ask for hints, never answers | Downgrades the AI to a slow search engine, and reads as performing |
-
 ### Questions to ask
 
 - "What's the main tech stack the team uses?"
-- "How much of the day-to-day is writing code versus debugging integrations with customers?"
-- "How long does it usually take for someone new to start picking up work independently?"
+- "What does daily work look like for a solutions engineer on your team?"
 
 ---
 
