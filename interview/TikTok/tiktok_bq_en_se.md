@@ -39,6 +39,14 @@ I also interned on the TikTok Open Platform team last summer, so I already know 
 
 The recruiter reached out about it. When I read the role, what stood out was the part about being the technical person the customer actually talks to, and that's the part of my current job I like most.
 
+### What do you know about ads work?
+
+On the server team I worked on our user acquisition side, running ads on Facebook to bring users into the app. And I'm familiar with how ads work on the NewsBreak side too, how they get retrieved, ranked, and finally shown in the feed. So I have a reasonable picture of the business from both directions.
+
+We used an MMP to attribute installs, so I handled the postbacks it sent us and tagged each new user with the campaign that brought them in. I also worked on sending our in-app events back to the ad platform, things like registration and early retention, so their optimization had something deeper to work with than just installs.
+
+On the serving side I didn't build it myself, but I've read through that code. I followed how an ad request goes from retrieval, through filtering and ranking, to being blended into the feed. Part of why I went looking was that premium users don't see ads, so the entitlement record I owned sits on that path as one of the checks.
+
 ### Work authorization
 
 I'm on F-1 OPT, first year. My major is STEM, so with the extension I have roughly three years I can work legally. Beyond that, if I stay long term, I'd need the company to sponsor an H1B.
@@ -298,24 +306,6 @@ Do **not** upgrade "found it passively" into "caught it with proactive monitorin
 
 ---
 
-### Q7. What do you know about how ads work? / Why ads?
-**Honesty red line: you have no ads background. Don't fake it.** The answer is adjacency plus
-genuine interest, delivered without apology. **Prep from `tiktok_ads_domain.md`** — at minimum
-Part 2 (campaign → ad group → creative), Part 4 (why the platform's numbers and the advertiser's
-numbers never match), and Part 6 (top escalations). The two bridges to rehearse, both honest:
-`event_id` dedup ≡ your `notification_uuid` idempotency key, and advertiser API integrations
-breaking on contract change ≡ your Protobuf migration.
-
-> I'll be straight with you — I haven't worked on ads systems directly, so I'm not going to pretend to depth I don't have.
->
-> What I have done maps pretty closely, though. The premium subscription work was money-critical: payment notifications arriving out of order, duplicated, sometimes lost, and I had to make sure that the entitlement state at the end was correct, because getting it wrong means charging someone who cancelled. That's the same shape as conversion and billing correctness in ads — events arriving unreliably from an external platform, and the number at the end has to be defensible.
->
-> And the API migration work is the integration side of it: making sure external consumers don't break when the contract underneath changes. From what I understand that's a lot of what this role deals with — advertisers integrating against our APIs and something not lining up.
->
-> The domain vocabulary I'd need to pick up, and I'd expect to spend the first couple of months doing that. But the underlying problems — external systems, unreliable events, numbers that have to be right, customers who need an explanation — those I've done.
-
----
-
 ### Q8. Tell me about a time you worked with a team you had no authority over.
 **Source: real cross-team work — review teams (upload), SRE (incidents), platform team (anti-abuse).**
 Lower-detail than the others by design; treat as backup if Q1–Q5 are exhausted.
@@ -338,7 +328,7 @@ Lower-detail than the others by design; treat as backup if Q1–Q5 are exhausted
 | Hard debugging / root cause | Q4 gas-stations | Q5 proto diffs |
 | API / not breaking consumers | Q5 proto migration | — |
 | Customer at fault | Q6 method + upload analogue | — |
-| Ads domain | Q7 honest adjacency | — |
+| Ads domain | HR-screen ads answer (Part 1) | — |
 | Cross-team, no authority | Q8 | Q1 |
 
 **Story reuse warning.** Q2 and Q3 are the same underlying event. Q1 and Q8 overlap on the
