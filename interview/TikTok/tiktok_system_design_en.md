@@ -212,7 +212,11 @@ What I'm storing is "how many times has this key been used in this window." The 
 
 Request hits the load balancer, then our limiter, which I'd implement as middleware on an API gateway or as a layer in front of the service. The middleware builds the key from user and endpoint, does one atomic increment in Redis, and compares against the threshold: under, pass through to the real service; over, return 429 immediately so the backend never sees it. Rules live in a config service, loaded at startup and refreshed periodically, so thresholds change without a restart.
 
+Worth a sentence on **where it lives**. Client-side is unreliable — you don't control the client and it can be modified, so it's a UX nicety at best. Inside each service works but duplicates the logic everywhere. **Middleware on the API gateway** is the usual answer: one implementation applied uniformly, and rejected traffic never touches your services.
+
 The key point is **why a shared Redis instead of per-machine counting**. Backends are multiple machines behind a load balancer, so one user's requests land on different boxes. If each counts independently — 10 machines each allowing 100 — the user effectively gets 1000 and the limit is meaningless. Centralizing the counter is the whole basis of distributed rate limiting.
+
+One caveat, because it cuts the other way for aggregate limits: **the key's cardinality decides where the state lives.** A per-user limit is high-cardinality, shards naturally, and centralizing is right. A *global* limit — "100 QPS across the whole fleet" — is a single key by definition, so every request contends on it: a guaranteed hot spot and a single point of failure sitting in front of everything. That one belongs in local memory, each instance holding 1/N of the budget, zero round trips. Approximate, but the goal there is protecting the downstream, not counting exactly — nginx's `limit_req` is per-worker-process for the same reason. So the rule isn't "always centralize," it's **centralize what has an identity, keep aggregate limits local**.
 
 **Key tradeoffs and bottlenecks**
 
@@ -222,7 +226,7 @@ My default: **token bucket** for user-facing API limits, because normal users do
 
 Two things worth knowing about how token bucket actually behaves, because they're counterintuitive. First, **the bucket is normally full**, not empty — it's initialized full and any user whose rate is below the refill rate never notices the limiter exists. Second, when the bucket does empty, requests are **rejected outright, not delayed** — there's no queue. Users experience scattered failures that recover quickly, not a steady drip. If you want the "steady drip" behavior, that's leaky bucket.
 
-Also worth separating from all of this: **a long-window quota** — "no more than 40 video uploads per user per 24 hours" — is a different problem, not a rate limit. It's a counting problem, the volume is tiny (40 records), and precision matters more than throughput. For that I'd keep timestamps in a sorted set and count the window exactly, or just query the business table with an index on `(user_id, created_at)`. Token bucket's burst allowance is meaningless there.
+Also worth separating from all of this: **a long-window quota** — "no more than 40 video uploads per user per 24 hours" — is a different problem, not a rate limit. It's a counting problem, the volume is tiny (40 records), and precision matters more than throughput. For that I'd keep timestamps in a sorted set — specifically a sorted set because `ZREMRANGEBYSCORE` is the only Redis command that deletes a whole time range in one call, where a list would need a loop and therefore Lua — and count the window exactly, or just query the business table with an index on `(user_id, created_at)`. Token bucket's burst allowance is meaningless there.
 
 **Atomicity** — two requests from one user arrive simultaneously; if I read, check, then write, there's a race where both read 99 and both pass. The fix is Redis atomic commands or a Lua script that makes the whole sequence indivisible. I always call this out explicitly.
 
@@ -233,6 +237,8 @@ Also worth separating from all of this: **a long-window quota** — "no more tha
 **Scaling** — when one Redis can't take 60K QPS, shard by user ID hash with consistent hashing so adding nodes moves few keys. Rate limiting shards beautifully because counters are independent per key and one user always lands on one node, so nothing is computed across nodes. Hot users can make a node hot, which you'd handle by special-casing very large keys, but "shard horizontally, partition by key" is the right depth here.
 
 One more thing worth being honest about: **in real backend code, `INCR` + `EXPIRE` shows up far more often than token bucket.** Most business cases don't need burst tolerance, and two Redis commands is a lot less to build and maintain than a Lua script with clock handling. Token bucket lives mostly in gateways and CDN layers, or gets pulled in as a library (Go's `golang.org/x/time/rate`), rather than being hand-written per service.
+
+**Monitoring** — I'd close on this because it's what separates a limiter that works from one that's merely deployed. Two things to watch: how much traffic is being rejected, and whether it's the traffic you meant to reject. A limiter that never fires is misconfigured; one that fires on legitimate users is worse than having none. That's exactly what drove the observe-only change on the anti-abuse system.
 
 ---
 
