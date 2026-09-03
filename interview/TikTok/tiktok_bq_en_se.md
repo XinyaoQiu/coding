@@ -219,122 +219,81 @@ So the organizing principle, in one sentence: one unified content platform plus 
 
 ## Part 4 — Customer-facing BQ (SE-specific)
 
-Adapted from `../Amazon/amazon_bq.md`. Same true events, re-cut for a Solutions Engineer loop:
-less implementation detail, more stakeholder, communication, and judgment.
+### A challenging technical project you owned and how you approached solving it
+The project I'd pick is the Apple notification handler for our premium subscription system. I owned it end to end.
 
-**Ratio for this loop:** S+T ≈ 25%, Action ≈ 50%, Result + takeaway ≈ 25%. In the Action, at
-least one sentence must name *a person or team you talked to and what you said to them*. That
-sentence is the one being graded.
+The job itself is pretty simple. Apple sends us a notification whenever something changes on a subscription, and I update the user's status in Mongo. That's the status that decides whether someone gets premium.
 
-### Q1. Tell me about a time you solved a pain point for a customer.
-**Source story:** Amazon Story C — upload status ownership. **Reuse in TikTok script:** Main story 2.
+The hard part wasn't the state machine. It was that the input is unreliable. Notifications arrive out of order, they get duplicated, and sometimes one just gets lost. And it's billing, so the status I write has to be right. Get it wrong and we either charge someone who already cancelled, or lock out someone who paid. Premium also means ad-free, so that second one costs us ad revenue too.
 
-> **(S)** Back in June we were getting a steady stream of support tickets about video uploads. Creators would upload something and it would sit on "processing" forever with no explanation, or show a failure with no reason attached. And because all of that status lived on the phone, if someone switched devices it all just disappeared.
->
-> **(T)** When I dug into the tickets, the pattern was that none of them were really about uploads being broken. They were about people not being able to tell what had happened to their own video. The server never owned that state, so there was no single answer to give them.
->
-> **(A)** I traced the whole path — client, our server, the media platform service that actually holds the state, and the review teams feeding results in over Kafka. The fix I pushed for was making the server the one place that owns this and translates our internal states into something a creator can actually read. That last part mattered more than it sounds: internally we have a processing state and a separate moderation state, and I had to sit down with the review team to agree on how their verdicts should surface to a user — because "rejected by moderation" and "transcoding failed" are the same word to a creator, but you have to tell them different things. I also kept it a live read with no cache, since a stale status on that page is exactly the thing that generates a ticket.
->
-> **(R)** After it shipped, instead of a video hanging on "processing," people got a real status with an actual reason, on any device they logged into. The tickets stopped. What stuck with me was that the real problem was never technical — it was that users couldn't trust what they were seeing, and the engineering work was just what it took to make the screen honest.
+So I took them one at a time instead of trying to design for all three at once.
 
----
+First, concurrency. A failed charge and its retry can land together. Two workers read the same record, and the later write silently overwrites the earlier one. So I serialize per user with a Redis lock. The key is the user ID, and the value is a unique token, so a worker can't release a lock it doesn't own.
 
-### Q2. Tell me about a time you explained something technical to a non-technical audience.
-**Source story:** Amazon Story A — anti-abuse false positives, re-cut for the communication angle.
-⚠️ Real event; the internal framing was a lapse (found it after the fact, not via monitoring).
-Do **not** upgrade "found it passively" into "caught it with proactive monitoring."
+Second, ordering. I store a watermark on each record. It's the event time of the last notification I processed, and anything older than that gets dropped.
 
-> **(S)** I built an anti-abuse middleware for video uploads that flagged traffic based on upload frequency and IP behavior. After it went live, it turned out to also be catching legitimate internal script traffic — real requests were getting blocked.
->
-> **(T)** The people affected weren't engineers on my team. They were internal folks whose workflows suddenly broke, and what they knew was "my thing stopped working." I had to explain what was happening and then get agreement on what to do about it.
->
-> **(A)** I stayed away from the rule mechanics entirely. What I told them was: our system is trying to spot people abusing uploads, one of the signals is how fast requests come in, and your scripts are fast enough that they look the same to us — so this is us mis-reading you, not you doing anything wrong. Framing it as our bug rather than their misconfiguration mattered, because otherwise the conversation becomes an argument about whose fault it is. Then I gave them a concrete decision instead of an open question: I could either carve out an exception for them, which is fragile and I'd have to maintain forever, or I could stop blocking at the entry point and just collect the signals for the downstream team to act on. I recommended the second and said why — a false positive on a real user costs us more than letting some abuse through for a bit.
->
-> **(R)** They agreed on the spot, false positives went to zero, and because the middleware kept collecting signals the content-platform team still identified the actual bad IPs and blocked those precisely. Honestly, the thing I took from it was about the conversation more than the fix: leading with "this is us misreading you" got us to a decision in one exchange, where leading with the detection logic would have turned it into a debate.
+Third, duplicates. Apple retries when we don't return a 200, so I use the notification UUID as an idempotency key. I write that key after the status write succeeds, not before, so if we crash halfway through, the redelivery can still come in.
 
----
 
-### Q3. Tell me about a time you had to say no to a request, or push back on a stakeholder.
-**Source story:** Amazon Story A (same event, push-back framing) — see caution above.
-**Do not reuse Q2 and Q3 in the same interview.** Pick whichever the wording fits.
+### A situation where you had to work cross-functionally or align with different stakeholders
+Our PM brought me user complaints about video uploads. People would upload something, it would fail, and they had no idea why or what to do next.
 
-> **(S)** Same anti-abuse system. Once people knew the middleware could block traffic, I got asked to tighten it — turn on hard blocking and push the thresholds down, because we were still seeing abuse getting through.
->
-> **(T)** The request was reasonable on its face. But I'd just come off an incident where that exact system blocked legitimate traffic, and I didn't have evidence the thresholds were safe. So I had to push back on something my own system was built to do.
->
-> **(A)** I didn't just say no. I said what I could commit to and what I'd need first. The argument I made was about asymmetry: if we let an abusive upload through, we catch it downstream at review and take it down, so the cost is a delay. If we block a real creator, they get no explanation, they don't retry, and we never find out. Those aren't the same size mistake. So what I proposed was to ship in observe-only mode, collect on real traffic, confirm the thresholds wouldn't catch legitimate creators, and only then talk about enforcement. I gave a clear condition for yes rather than leaving it as a refusal.
->
-> **(R)** We went with observe-first, and the signals we collected were what let the downstream team blacklist the real abusers precisely — so we got the enforcement outcome without gambling on the thresholds. That's been a habit ever since: I don't ship an interception rule in blocking mode on day one, I ship it watching first.
+At that point the client could only show three things: success, processing, or failed. And failed was just one bucket. A network drop, a corrupted file, a content rejection, they all looked the same. Users couldn't tell whether to retry or give up.
 
----
+The reasons existed, they just never reached the client. Some were upload and processing errors on our side. The rest came from the content platform's audit. What made this cross-functional is that everyone knew how the chain worked, but nobody owned pulling it together and getting it to the client.
 
-### Q4. Tell me about a time you debugged a hard problem where the symptoms were misleading.
-**Source story:** Amazon Story B — gas-stations memory bomb.
-**Scope note:** keep it server-side. Do NOT bring in the LB-amplification angle or client-side bounds.
+So I followed the data. I asked the content platform what audit statuses they actually have, and they told me they push results over Kafka to the media platform. Then I asked the media platform team where that ends up, and they said MySQL. So I could read both the result and the reason from there.
 
-> **(S)** For about a week our main server cluster kept going unhealthy — five-hundreds spiking, requests timing out, and mongo and memcache alerts firing alongside it. At the worst point more than 70% of requests to that cluster were failing, so it looked like three separate systems were falling over at the same time.
->
-> **(T)** I was on call. What made it hard was that it had already happened a couple of times that week and nobody had found the cause, so it kept coming back. Restarting pods made it go away every time, which is exactly why it kept happening.
->
-> **(A)** I worked it off the dashboards and logs rather than guessing. The first thing that narrowed it down was that several pods were swelling at once — pods don't die together on their own, so something external was hitting them. The usual dashboards couldn't tell me what, so I brought in flame-graph profiling, and that pointed straight at one endpoint: a gas-stations lookup whose database query had no limit on it. A request with a big enough geographic area pulled tens of thousands of documents in a single call and blew up the pod's memory. The part I was most pleased with was realizing the mongo and memcache alerts weren't separate failures at all — when pods died, their traffic retried onto the healthy ones, and that overload tipped the other systems over. One cause, three sets of alarms.
->
-> **(R)** I added a limit and a bounds guard, and something that had recurred four times in a week stopped completely. The counterintuitive bit was the volume: this wasn't a traffic flood, it was a handful of requests. For that class of problem you have to look at the size of a single request, not the request count — which is the opposite of where the dashboards point you.
+Once I knew what was available, I went to the client team with a specific proposal. Instead of one failed state, show two: failed and rejected. I'd send the reason for each, and they'd show it in a banner.
 
----
+Now failed means a network or file problem, and we tell the user to retry or re-upload. Rejected means review didn't pass, and we tell them why. Two completely different actions that used to look the same. Finally the users can know the uploading status and reasons.
 
-### Q5. Tell me about a time you delivered something without breaking existing consumers.
-**Source story:** Amazon Story F — proto migration. **Most on-point story for the API half of this JD.**
 
-> **(S)** My main project this year was migrating our JSON APIs onto a Protobuf contract — over 40 endpoints across user, profile, content, and a few other areas.
->
-> **(T)** The hard constraint was that the clients consuming those APIs hadn't all migrated. So this wasn't really a migration project, it was a compatibility project: the new output had to reproduce the old behavior field for field, because anything I dropped would break somebody I couldn't see.
->
-> **(A)** Rather than trade speed for safety, I built the verification that gave me both. On staging I ran the new path and the old path side by side on the same request and auto-diffed the responses, with a control group so normal data drift didn't look like a regression. Then I rolled each endpoint out behind a gate instead of flipping everything at once. The judgment call was in triaging the diffs — I didn't fix all of them. A field the old path returned and the new one dropped was a must-fix, because a consumer depending on that key breaks when it disappears. Extra fields I could safely leave, since a consumer can ignore a key it doesn't know. That asymmetry is what let me move fast on the ones that didn't matter.
->
-> **(R)** All 40-plus endpoints shipped on schedule, around 120 PRs, with no client-breaking regressions from the rollout. The thing I'd carry into a role like this one is that when you don't control the consumers, "it works" isn't the bar — you need a way to prove you didn't break anyone, before they find out for you.
+### A time you had to navigate competing priorities or ambiguity
+**Competing Priorities**
+The one I'd pick is anti-abuse on our video upload path. I designed and built the middleware that flagged abusive upload traffic based on things like upload frequency and IP behavior, and blocked whatever it flagged.
 
----
+Once it was live, it started blocking internal crawler scripts. Their traffic looked exactly like abuse, high frequency coming from a few IPs, so the rules caught them.
 
-### Q6. A customer reports a bug that turns out to be their own misconfiguration. How do you handle it?
-**No source story — this is a hypothetical, answer with method plus a real analogue.**
+That put two goals directly against each other. The middleware existed to block abuse, and every hour it was off, abuse was getting through. But it was also blocking legitimate internal traffic that other teams depended on.
 
-> I try hard not to lead with "that's on your side," even when it is — the moment it sounds like blame, you stop getting information from them.
->
-> So I'd confirm the behavior first and get specific: a request ID, a timestamp, the exact payload they sent. Then I'd reproduce it from our side so I'm describing something I've seen rather than something I'm inferring. When I find it's a config issue, I'd frame it around what to change rather than who was wrong — here's the call you made, here's what our side expected, here's the fix.
->
-> And then the part I think actually matters: I'd ask why it was possible to get into that state. If a customer misconfigured something, usually the error we returned was too vague, or the docs were ambiguous, or the API let them do something that was never valid. That's our problem, not theirs. The upload work I did came out of exactly that — users kept filing tickets because a failure came back with no reason attached, and once the server started returning the actual cause, the tickets stopped. So my instinct with a misconfiguration is to fix the individual customer fast, then go change whatever let it happen quietly.
+So I made a call. A false positive on a real user costs more than a false negative on a bot. If we let some abuse through for a while, we lose a little. If we block someone legitimate, we've broken something that was working, and they have no way to route around us.
 
----
+So I dropped the hard block and redesigned the middleware into collect-only. It still gathers the signals at the entry point, but it passes the IP info downstream instead of acting on it.
 
-### Q8. Tell me about a time you worked with a team you had no authority over.
-**Source: real cross-team work — review teams (upload), SRE (incidents), platform team (anti-abuse).**
-Lower-detail than the others by design; treat as backup if Q1–Q5 are exhausted.
+That turned out better than what I'd originally built. The content platform team took those signals, found the actual malicious crawler IPs, and blocked exactly those with a blacklist. We caught the real abusers, with zero false positives on legitimate traffic.
 
-> The upload status work is the clearest one. The state I needed lived in another team's service, and the moderation verdicts came from a third team, so I couldn't ship any of it alone and none of them reported to me.
->
-> What worked was showing up with the problem framed in their terms rather than mine. With the review team, I didn't ask them to change anything — I asked how they wanted their verdicts represented to a creator, because they cared about that and it was genuinely their call. With the platform team, the ask was concrete and small enough to say yes to. I did the tracing work up front so nobody had to go figure out their own piece of the picture.
->
-> All of it landed, and I've kept the habit since: do the homework before the ask, and make the ask specific. "Can you help with this" gets deprioritized. "Can you confirm this one field means what I think it means" gets answered same day.
+What changed for me is that now I ship any blocking rule in observe-only first, check there are no false positives, and only then turn the blocking on.
 
----
+**Ambiguity**
+For about a week our main server cluster kept going unhealthy. Spikes in 500s, requests timing out, and mongo and memcache alerts firing at the same time. At peak more than 70% of requests to that cluster were failing.
 
-### Coverage map
+The confusing part was that it looked like three unrelated systems falling over together. And it had already happened a couple of times that week without anyone finding the cause. People restarted pods, it went away, then it came back.
 
-| Likely SE question | Use | Backup |
-|---|---|---|
-| Customer pain / customer obsession | Q1 upload status | Q6 method |
-| Explain technical to non-technical | Q2 anti-abuse | Q1 status translation |
-| Push back / say no | Q3 anti-abuse | — |
-| Hard debugging / root cause | Q4 gas-stations | Q5 proto diffs |
-| API / not breaking consumers | Q5 proto migration | — |
-| Customer at fault | Q6 method + upload analogue | — |
-| Ads domain | HR-screen ads answer (Part 1) | — |
-| Cross-team, no authority | Q8 | Q1 |
+I was on call, and I decided to actually chase it down rather than restart and move on.
 
-**Story reuse warning.** Q2 and Q3 are the same underlying event. Q1 and Q8 overlap on the
-upload work. In a single loop, use each event once — if you've spent anti-abuse on "explain to
-non-technical," answer a push-back question from the proto triage decision instead (choosing not
-to fix drifting fields, and defending that call).
+The first thing I noticed on the dashboards was that several pods were swelling at once. Pods don't die together on their own, so something external was hitting them. That told me which direction to look, but not what was actually doing it.
+
+The normal dashboards couldn't tell me what exactly, so I brought in flame graph profiling. That pointed straight at one handler that was eating all the CPU. It was a gas station lookup, and its mongo query had no limit on it. A single request with huge geographic bounds would pull tens of thousands of documents in one call and blow up the pod's heap.
+
+And the thing that had thrown everyone off is that it wasn't a traffic flood. It was only a handful of requests each time. For this kind of failure you have to look at the size of one request, not the number of them.
+
+Once I had that, the rest explained itself. The mongo and memcache alerts weren't separate failures. Traffic from dying pods retried onto healthy pods, and that overload tipped mongo and memcache over.
+
+I added a limit and a bounds guard on the query, and it never came back.
+
+What stuck with me is that the surface almost never points at the root. Restarting pods would have worked every single time and taught me nothing.
+
+### Any experience you've had with AI/automation, cloud, or improving engineering processes
+We use Claude Code for most of the work, both design and implementation. My team shares one CLAUDE.md that lays out how we work and how we write code, so everyone's agent behaves the same way.
+
+So my flow is that I get the requirements from the PM, then have the agent draft a tech design doc. I go through it myself and edit. Then I send it to the PM and the other engineers to review.
+
+Once that's approved, I start a new agent and have it implement from the doc. Then I start another one just to review that code. And I will read through it myself, looking for edge cases or bugs.
+
+After that I have the agent handle the commit, the push, and opens the PR. Once the PR is approved, CI/CD takes it from there. And at the end I tell the agent to summarize the points and write to local memory, so the agent can do better next time.
+
+### Be ready to go deeper into your specific contributions and the technical decisions you made
 
 ### Questions to ask (SE round)
 
