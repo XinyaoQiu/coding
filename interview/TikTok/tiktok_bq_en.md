@@ -177,55 +177,83 @@ Out of all of these, the one I can walk through end to end is the premium subscr
 
 ### Main story 1 — Premium subscription system
 
-Let me talk about something I built in our premium subscription system. My job was to handle the notification Apple sends us and update the current status for each user. We have five states: active/cancel/billing_retry/grace_period/expired. We store the current paid status for each user in mongodb. It contains last_event_time, transaction_id and current status. I create this record only when notification type is subscribed.
+I built the backend for our Premium subscription system at NewsBreak. The goal was to offer premium features and make sure subscribers got the access they paid for. I owned the purchase APIs, the subscription state machine, and Apple's notification handler.
 
-The hardest part is notifications are out of order, they might be duplicated, and some might be lost. I need to handle them correctly.
+I designed two APIs for the purchase flow. Before payment, a prepare API linked our user account to an app account token. After payment, the app called subscribe API with Apple's signed payload. The backend verified it and granted Premium access. Apple's webhook then handled subscription lifecycle events, including renewals, cancellations, and billing failures.
 
-The first thing I hit was concurrency. Imagine that a failed charge and the successful retry arrive at the same time. If both come in at once, two workers read the same record from database, each computes its own answer, and write. The later write overwrites the earlier one. So I added a distributed lock using Redis command SetNX. The key is user id, and value is a globally unique value. The unique value will prevent workers from deleting locks that are not created by them. And I set the TTL as 30 seconds so a worker cannot have the lock forever, with the controller timing out at 10 — keeping the timeout strictly under the TTL means a lock can't expire while the previous worker is still running. To delete the key, I use a Lua script and combine check value and delete into one atomic command. Notifications for the same user get serialized.
+I designed a state machine and stored each user's subscription state in MongoDB. I kept entitlement checks separate from subscription status. For example, canceling auto-renewal doesn't immediately remove Premium access. The user has already paid for the current period. A user in a billing grace period also keeps access, but loses it if the grace period ends and payment still hasn't recovered.
 
-Once things were serialized, the second problem was ordering. The order they arrive in isn't the order things actually happened. Notifications can be delayed or redelivered. For example, say the user turns auto-renew on, and then later turns it off. If the "turn on" notification arrives after the "turn off" one, and I just process them in arrival order, that late "turn on" overwrites the cancel and puts them back to active. The user thinks they cancelled, but we auto-renew and charge them next cycle. So I keep a watermark on each record — the event time of the last notification I processed — and a new one only gets processed if it's newer than that. Anything older gets dropped. The key question is which timestamp you compare: I use the event time Apple signed into the notification, not our receive time and not the database's updated-at.
+The hardest part was handling concurrent, out-of-order, and duplicate notifications. For example, a renewal could fail and then recover. If the recovery notification arrived first, processing the delayed failure notification could incorrectly remove the user's access.
 
-The watermark handles late notifications, but it does nothing for duplicates. Sometimes the request never reaches us, or we have to return a non-200 code, and Apple retries — so the same notification can arrive more than once. For that I use `notification_uuid` as an idempotency key in Redis, with a 7-day TTL. One detail: the key is written **after** the state write succeeds, not claimed before processing. If I claimed it up front and then crashed mid-handler, the key would survive without the state write, and the redelivery would get rejected by our own key — that notification would be lost. Writing it last means at worst we reprocess once, which computes the same state anyway.
+I used a per-user Redis distributed lock to serialize updates. To handle out-of-order notifications, I stored a timestamp watermark in MongoDB. For the same transaction ID, I rejected notifications with an older event time. When the transaction IDs were different, I called Apple's subscription status API inside the same user lock to check which one was current.
 
-Another edge case here is cross-transaction. If the user cancels and resubsecribes later, they are different transactions, so Apple would send notification with different transaction_id. I cannot compare the event_time now because they are different lifecycles, and Apple doesn't guarantee the ordering for events across two transactions. So if the incoming notification's transaction id is different from the one on the record, I call Apple's subscription status API and let Apple tell me which one is currently active. If the incoming one isn't the active one, I just drop it. And even when Apple does confirm it's active, that only means the notification is safe to process — I still only re-point the record's transaction id when the type is `SUBSCRIBED`. A renewal or a cancel for a transaction we've never seen shouldn't be allowed to take over the record.
+For idempotency, I used the notification UUID as a Redis key to prevent handling same notifications.
 
+One mistake I made was initially comparing our server's write time against the record's `updated_time` to decide whether an update was newer. But a delayed notification would get a later timestamp and could overwrite a newer subscription state. I traced the notification logs, switched to Apple's signed timestamp, and tested delayed and reordered notifications. I also checked the affected subscriptions against Apple and repaired their local states.
 
+By the third month after launch, the product had over 2,300 paid subscribers and generated about $190K in annual revenue. We also received positive feedback from users who said they were happy with the Premium experience.
 
-#### Follow-up 1: What did you get wrong along the way?
+#### Follow-up 1: Which timestamp did you use, and why?
 
-The watermark. At first, the timestamp I compared against was the record's updated-at in the database. My thinking was: we update the record every time we process something anyway, so why not just use that as the watermark.
+I used the outer `signedDate` in the notification payload. It tells me when Apple signed the notification snapshot, and it stays the same on retries. For the same transaction ID, Apple recommends using the snapshot with the latest `signedDate`. I rejected strictly older notifications and used the UUID separately for duplicates.
 
-But that timestamp records when I finished processing, not when the thing actually happened. And processing has real lag — from the moment the platform sends a notification to the moment I finish handling it, tens of seconds or more can pass. So the updated-at in the database is always later than the real event time. Then the next notification comes in, I compare, and its event time looks *older* — so I drop it as stale. **The result was that new notifications were getting thrown away and the state just froze on the old value.**
+#### Follow-up 2: What happened when transaction IDs were different?
 
-The fix was to add a dedicated field storing the event time the platform signed into the notification itself, and compare against that. That way I'm comparing when things actually happened, which doesn't care how fast we process or whether the clocks on our machines agree.
+While holding the user lock, I called `Get All Subscription Statuses` and it gave me the subscription's status and latest signed transaction information. So I could compared the returned `transactionId` with the incoming one. If the incoming transaction had been superseded, I didn't let it replace the current record.
 
-What this taught me: **to order events, use the time the event carries with it, not the time we observed it.** The first is a fact about the world. The second has our own system's state mixed into it.
+A successful renewal can also introduce a new transaction ID. When accepting that change, the local transaction ID, state, and watermark need to change together. The check must also handle expired subscriptions and billing retry, not just look for an active transaction.
 
-#### Follow-up 2: If you built it again, what would be different?
+#### Follow-up 3: Why Redis locking instead of MongoDB CAS?
 
-Quite a bit. And not in the sense of adding some feature — **I'd draw the consistency boundary in a different place entirely.**
+I used a per-user lock to keep the local read, the Apple API check, and the state update in one sequential flow. That prevented another worker from changing the user's record while I was checking with Apple. MongoDB CAS was also a valid option. That is what I would change if I build the entire system again.
 
-Here's where the current design starts from. I was thinking: one notification for one user has to be atomic from start to finish. So I took a lock and wrapped the whole thing in it — read the record, claim the idempotency key, compute the new state, write it, drop the cache, write the audit log. Six things, all inside the lock. The upside is direct: no intermediate state is ever visible to anyone else, every before/after pair in the audit log is exactly accurate, and if something goes wrong I can walk it back step by step.
+#### Follow-up 4: What happened if processing exceeded the lock's TTL?
 
-But that choice costs something. Wrapping the lock that wide means I depend on Redis being up, I have to set a TTL on the lock, I have to reason about what happens when the TTL expires and another worker walks in, and on release I have to check with a Lua script that the lock is still mine. All of that complexity exists because I wanted those six things bound together.
+If the lock expired while processing continued, another worker could acquire it and cause conflicting writes. We used a 10-second timeout for the entire handler, with database calls, Redis calls, Apple API calls, and limited retries sharing the same context deadline. The lock had a 30-second TTL, which left a buffer for processing to exit and release the lock. We didn't use a watchdog.
 
-**If I built it again, I'd start from the other end: make only the state write atomic, and push everything else outside.**
+#### Follow-up 5: Was the Apple API call inside or outside the lock?
 
-Concretely, use Mongo's conditional update — `findOneAndUpdate`, with a filter that says `last_notif_event_time < my event time`, and write the notification's unique id onto the record in the same operation. That one operation does three things at once: it checks whether this notification is newer than what's stored, it confirms it hasn't been processed before, and it writes. Correctness comes from single-document atomicity, so no lock is needed. Dropping the cache and writing the audit log move after that update and happen asynchronously.
+It was inside the lock. I acquired the user lock, read the local record, called Apple if the transaction IDs differed, and updated the record before releasing the lock.
 
-**Here's the difference.** The current design says "carve out a mutually exclusive window, and inside it I can do whatever I want." The other one says "don't carve out a window — make the write itself carry all the conditions, so if the write succeeds, every condition held." The first is pessimistic: claim it first, then act. The second is optimistic: just try it, and if the conditions don't hold it fails on its own.
+The trade-off was holding the lock while waiting on Apple, so another update for the same user might have to wait or retry. The check was infrequent, and the Apple call shared the handler's 10-second timeout budget. That kept the flow simpler than calling Apple outside the lock and then checking whether the local record had changed.
 
-**Idempotency changes with it.** Right now I keep the `notificationUUID` in Redis, because it's a separate thing from the state record and needs somewhere to live. But if the check has already moved down into that conditional update, the unique id can go into Mongo directly — either on the record itself, or as a unique index on the audit table's uuid so that the insert *is* the dedup. That way the audit table serves two purposes with one piece of data: it's the log for after-the-fact investigation, and it's the live idempotency key. No separate Redis layer to maintain.
+#### Follow-up 6: When did you write the idempotency key?
 
-**So what's the trade-off?**
+I checked the UUID after acquiring the user lock and set the key only after processing succeeded. If I crashed before finishing, there was no idempotency key to block a retry. Keeping the check and processing under the same lock prevented two copies from both proceeding concurrently.
 
-First, **the audit trail gets holes in it.** Right now the audit write is inside the lock, tied to the state write — either both happen or neither does. Move it out, and you can have the state write succeed while the audit write fails, so a row goes missing. For a system that deals with money, "I changed the state but left no record of it" is something you have to think hard about.
+#### Follow-up 7: What if the database update succeeded but the Redis write failed?
 
-Second, **the cache inconsistency window gets a bit longer.** Right now the cache delete is inside the lock, so it happens immediately after the write. Move it out and there's a gap, and during that gap the odds of a reader getting a stale value go up. That said, the impact is limited — we have a TTL as a backstop anyway, and the read paths that genuinely care about freshness bypass the cache and hit the database directly.
+The notification could be processed again. That was acceptable for the state update because it assigned a target state rather than incrementing a value. An older notification would still go through the ordering checks.
 
-The third point isn't really a trade-off, it's **the part neither design changes**: business logic can't be pushed down into the database. A conditional update can express "whose timestamp is newer" and "have I seen this one," but it can't express "who's allowed to create a record when none exists," and it definitely can't express cross-transaction ownership — that requires calling Apple first to ask which transaction is active, which is application-layer work regardless of whether you use a lock. (Worth noting that callback already sits outside the lock today, because it's a cross-network call and putting it inside would make the lock's TTL depend on Apple's response time.) So the guard survives in either design. The only difference is whether it's a block of logic protected by a lock, or a check that runs before the conditional update.
+That doesn't guarantee every side effect happens once. If processing also sent a message or created a billing entry, that action would need its own deduplication or a transactional outbox.
 
-**So the two designs really diverge right at the start**: do you guarantee mutual exclusion over the whole handler, or atomicity over the one write. Pick the first and you get strict traceability, at the cost of complexity and a dependency on Redis. Pick the second and you get fewer dependencies and simpler failure modes, at the cost of accepting some lag in your audit trail and your cache. I picked the first because this is money and I wanted every step to be traceable. But if I were deciding today I'd seriously consider the second — especially somewhere that already has a mature asynchronous audit pipeline, because then the first cost basically goes away.
+#### Follow-up 8: What if the client request and Apple's webhook arrived together?
+
+Both paths used the same per-user lock and state checks. Whichever ran second read the updated record before deciding what to do. The webhook didn't blindly create another record, and the client request couldn't simply reset an existing subscription to active.
+
+The notification UUID only deduplicated webhook deliveries. It didn't identify the client request as the same purchase.
+
+#### Follow-up 9: What if Apple's request or your response was lost?
+
+If Apple didn't receive a success response, it retried. If our processing had already succeeded but the response was lost, the UUID check handled the duplicate. If processing failed, I returned an error so the notification could be retried.
+
+Retries are finite. If all attempts were missed, I would recover through Apple's notification history or check the current subscription status. For automatic recovery, I would add a reconciliation job; retries alone don't cover every outage.
+
+#### Follow-up 10: What did the $190K in ARR represent?
+
+It was the annual recurring revenue from the subscription base we had by the third month after launch, when we had over 2,300 paid subscribers. It wasn't the revenue collected over those three months. My contribution was building the subscription backend that supported those purchases and managed Premium access.
+
+#### Follow-up 11: If you built it again, what would you change?
+
+I would consider using MongoDB optimistic locking and storing the last processed notification UUID in the subscription record. The main state already lived in one document, so I could update the state and the idempotency key atomically.
+
+I would read the record and its version, check the notification, and compute the new state. The update filter would include the version I read and check that the incoming UUID wasn't already stored. In the same update, I would save the state, transaction ID, watermark, and UUID, and increment the version.
+
+For example, two workers might both read version 5. The first update succeeds and changes it to 6. The second update no longer matches. That worker has to read the latest record and reconsider the notification. It can't just retry the old result with a new version. The ordering checks still decide whether the notification should be applied.
+
+The benefit is removing the Redis lock and the gap between writing the state and writing the idempotency key.
+
+I'd also add a unique index on `user_id` to prevent two workers from creating separate records for the same user at the same time.
 
 ---
 
