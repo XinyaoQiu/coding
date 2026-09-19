@@ -167,93 +167,36 @@ Asking the AI for a full solution is fine and expected — what's graded is what
 
 ### Self-intro
 
-Hi, I'm Xinyao. You can call me Alex. I did my CS master's at UIUC and graduated last December. Before that I was in a dual-degree program between the University of Michigan and Shanghai Jiao Tong. Since February this year I've been a backend engineer at Newsbreak — it's a local news and AI company, and I'm on the server team.
-
-I've worked on a few things there. First, I migrated a batch of our core APIs from JSON to Protobuf. Before that, both the server and the client would just throw whatever fields they wanted into requests and responses. After the migration they share one schema. Second, I own our UGC video upload pipeline. I wrote an anti-abuse middleware that checks IP reputation through ipinfo and does rate limiting. I also moved upload status out of the client's local storage and onto the server, so we can send the real status and the actual failure reason back to the user. Third, I built new features for our premium subscription system — I added a billing-retry state to the state machine so it handles Apple's billing retry window, wrote an ordering guard for out-of-order and duplicate events, and used a Redis lock to prevent concurrent writes from stepping on each other. On top of that I migrated some Mongo databases to a new cluster and tuned indexes and connection pools along the way. I'm also in the on-call rotation, so I spend a fair amount of time digging into production alerts and finding root causes.
-
-Before Newsbreak I had two internships. At ByteDance I was on the TTOP team, working with TTLS. I did data dump work — processing third-party travel and hotel data, comparing it against historical data and purging the expired records. I also built an in-app booking service so users didn't have to jump out to a third-party app. At Tesla I did a full-stack project, an internal Gantt-chart-style tool for vehicle engineers to schedule test experiments.
-
-Out of all of these, the one I can walk through end to end is the premium subscription system. If that works for you, I'd like to start there.
+Hi, I'm Xinyao. I did my master's degree at UIUC and graduated last December. I'm working at NewsBreak since February as a backend engineer on the server team. NewsBreak is an app that focused on the local news for American users.
+At NewsBreak, I worked on three main projects. I migrated core APIs from JSON to Protobuf so the client and server could share a clear schema. I also owned the UGC video upload pipeline, including anti-abuse checks and making upload status more reliable for users. And I built the backend for our Premium subscription system, like the purchase APIs, subscription state machine, the notification handler and premium access. I also worked on infra and deployment, and took part in the on-call rotation.
+Before NewsBreak, I had two internships at ByteDance and Tesla.
+I have a strong foundation in backend development and distributed systems, along with hands-on experience building AI agents. I've also worked on production systems and handled real engineering challenges.
 
 ### Main story 1 — Premium subscription system
 
 I built the backend for our Premium subscription system at NewsBreak. The goal was to offer premium features and make sure subscribers got the access they paid for. I owned the purchase APIs, the subscription state machine, and Apple's notification handler.
 
-I designed two APIs for the purchase flow. Before payment, a prepare API linked our user account to an app account token. After payment, the app called subscribe API with Apple's signed payload. The backend verified it and granted Premium access. Apple's webhook then handled subscription lifecycle events, including renewals, cancellations, and billing failures.
+I wrote two APIs for the purchase flow. Before payment, a prepare API linked our user account to an app account token. After payment, the app called subscribe API with Apple's signed payload. The backend verified it and granted Premium access. Apple's webhook then handled subscription lifecycle events, including renewals, cancellations, and billing failures.
 
-I designed a state machine and stored each user's subscription state in MongoDB. I kept entitlement checks separate from subscription status. For example, canceling auto-renewal doesn't immediately remove Premium access. The user has already paid for the current period. A user in a billing grace period also keeps access, but loses it if the grace period ends and payment still hasn't recovered.
+I built a state machine and stored each user's subscription state in MongoDB. I tracked two separate status: the subscription status and whether the user had Premium access. For example, canceling auto-renewal doesn't immediately remove Premium access because the user has already paid for the current period. And a user in a billing grace period also keeps access, but will lose it if the grace period ends and payment still hasn't recovered.
 
-The hardest part was handling concurrent, out-of-order, and duplicate notifications. For example, a renewal could fail and then recover. If the recovery notification arrived first, processing the delayed failure notification could incorrectly remove the user's access.
+The hardest part was handling concurrent, out-of-order, and duplicate notifications. For example, a renewal could fail and then recover. If the recovery notification arrived first and the failure notification arrived later, processing the delayed failure notification could incorrectly remove the user's access.
 
-I used a per-user Redis distributed lock to serialize updates. To handle out-of-order notifications, I stored a timestamp watermark in MongoDB. For the same transaction ID, I rejected notifications with an older event time. When the transaction IDs were different, I called Apple's subscription status API inside the same user lock to check which one was current.
+So first I used a Redis lock to serialize processing and a MongoDB version check to prevent concurrency conflict. To handle out-of-order notifications, I stored a timestamp watermark in MongoDB. It's like for the same transaction ID, I rejected notifications with an older event time. When the transaction IDs were different, I called Apple's subscription status API inside the same lock to check which one was current.
 
-For idempotency, I used the notification UUID as a Redis key to prevent handling same notifications.
+For idempotency, I used the notification ID as a Redis key to prevent processing the same notification again.
 
-One mistake I made was initially comparing our server's write time against the record's `updated_time` to decide whether an update was newer. But a delayed notification would get a later timestamp and could overwrite a newer subscription state. I traced the notification logs, switched to Apple's signed timestamp, and tested delayed and reordered notifications. I also checked the affected subscriptions against Apple and repaired their local states.
+One mistake I made was initially comparing our server's write time against the record's `updated_time` to decide whether an update was newer. But a delayed notification would get a later timestamp and could overwrite a newer subscription state. I traced the notification logs, switched to notification event time, and tested delayed and reordered notifications. I also checked the affected subscriptions against Apple and repaired their local states.
 
-By the third month after launch, the product had over 2,300 paid subscribers and generated about $190K in annual revenue. We also received positive feedback from users who said they were happy with the Premium experience.
+By the third month after launch, the app had over 2,300 paid subscribers and generated about $190K in annual revenue. We also received positive feedback from users who said they were happy with the Premium experience.
 
-#### Follow-up 1: Which timestamp did you use, and why?
+#### Follow-up: If you built it again, what would you change?
 
-I used the outer `signedDate` in the notification payload. It tells me when Apple signed the notification snapshot, and it stays the same on retries. For the same transaction ID, Apple recommends using the snapshot with the latest `signedDate`. I rejected strictly older notifications and used the UUID separately for duplicates.
+I would consider removing the Redis lock and adding the idempotency key into the user status record. I would keep the MongoDB version check we already had.
 
-#### Follow-up 2: What happened when transaction IDs were different?
+That would let me save the state, watermark, and idempotency key in one atomic update. If the version check failed, the worker would reread the record and reconsider the notification.
 
-While holding the user lock, I called `Get All Subscription Statuses` and it gave me the subscription's status and latest signed transaction information. So I could compared the returned `transactionId` with the incoming one. If the incoming transaction had been superseded, I didn't let it replace the current record.
-
-A successful renewal can also introduce a new transaction ID. When accepting that change, the local transaction ID, state, and watermark need to change together. The check must also handle expired subscriptions and billing retry, not just look for an active transaction.
-
-#### Follow-up 3: Why Redis locking instead of MongoDB CAS?
-
-I used a per-user lock to keep the local read, the Apple API check, and the state update in one sequential flow. That prevented another worker from changing the user's record while I was checking with Apple. MongoDB CAS was also a valid option. That is what I would change if I build the entire system again.
-
-#### Follow-up 4: What happened if processing exceeded the lock's TTL?
-
-If the lock expired while processing continued, another worker could acquire it and cause conflicting writes. We used a 10-second timeout for the entire handler, with database calls, Redis calls, Apple API calls, and limited retries sharing the same context deadline. The lock had a 30-second TTL, which left a buffer for processing to exit and release the lock. We didn't use a watchdog.
-
-#### Follow-up 5: Was the Apple API call inside or outside the lock?
-
-It was inside the lock. I acquired the user lock, read the local record, called Apple if the transaction IDs differed, and updated the record before releasing the lock.
-
-The trade-off was holding the lock while waiting on Apple, so another update for the same user might have to wait or retry. The check was infrequent, and the Apple call shared the handler's 10-second timeout budget. That kept the flow simpler than calling Apple outside the lock and then checking whether the local record had changed.
-
-#### Follow-up 6: When did you write the idempotency key?
-
-I checked the UUID after acquiring the user lock and set the key only after processing succeeded. If I crashed before finishing, there was no idempotency key to block a retry. Keeping the check and processing under the same lock prevented two copies from both proceeding concurrently.
-
-#### Follow-up 7: What if the database update succeeded but the Redis write failed?
-
-The notification could be processed again. That was acceptable for the state update because it assigned a target state rather than incrementing a value. An older notification would still go through the ordering checks.
-
-That doesn't guarantee every side effect happens once. If processing also sent a message or created a billing entry, that action would need its own deduplication or a transactional outbox.
-
-#### Follow-up 8: What if the client request and Apple's webhook arrived together?
-
-Both paths used the same per-user lock and state checks. Whichever ran second read the updated record before deciding what to do. The webhook didn't blindly create another record, and the client request couldn't simply reset an existing subscription to active.
-
-The notification UUID only deduplicated webhook deliveries. It didn't identify the client request as the same purchase.
-
-#### Follow-up 9: What if Apple's request or your response was lost?
-
-If Apple didn't receive a success response, it retried. If our processing had already succeeded but the response was lost, the UUID check handled the duplicate. If processing failed, I returned an error so the notification could be retried.
-
-Retries are finite. If all attempts were missed, I would recover through Apple's notification history or check the current subscription status. For automatic recovery, I would add a reconciliation job; retries alone don't cover every outage.
-
-#### Follow-up 10: What did the $190K in ARR represent?
-
-It was the annual recurring revenue from the subscription base we had by the third month after launch, when we had over 2,300 paid subscribers. It wasn't the revenue collected over those three months. My contribution was building the subscription backend that supported those purchases and managed Premium access.
-
-#### Follow-up 11: If you built it again, what would you change?
-
-I would consider using MongoDB optimistic locking and storing the last processed notification UUID in the subscription record. The main state already lived in one document, so I could update the state and the idempotency key atomically.
-
-I would read the record and its version, check the notification, and compute the new state. The update filter would include the version I read and check that the incoming UUID wasn't already stored. In the same update, I would save the state, transaction ID, watermark, and UUID, and increment the version.
-
-For example, two workers might both read version 5. The first update succeeds and changes it to 6. The second update no longer matches. That worker has to read the latest record and reconsider the notification. It can't just retry the old result with a new version. The ordering checks still decide whether the notification should be applied.
-
-The benefit is removing the Redis lock and the gap between writing the state and writing the idempotency key.
-
-I'd also add a unique index on `user_id` to prevent two workers from creating separate records for the same user at the same time.
+The benefit would be fewer Redis operations and no gap between saving the state and saving the idempotency key. The trade-off would be handling concurrent requests through version conflicts and retries instead of serializing them upfront.
 
 ---
 
