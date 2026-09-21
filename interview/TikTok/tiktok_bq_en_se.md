@@ -33,8 +33,6 @@ Before Newsbreak I had two internships. At ByteDance I was on the TTOP team, wor
 
 I've learned a lot at Newsbreak and built a few backend projects there. What I want next is to do user-facing work on a much bigger and more complex system, and that's why I'm interested in TikTok. It's an innovative, fast-growing company, so I think I'd have a lot more room to grow.
 
-I also interned on the TikTok Open Platform team last summer, so I already know the internal tools and the tech stack, and I really liked the culture.
-
 ### Why are you applying for a solutions engineer role
 
 The recruiter reached out about it. When I read the role, what stood out was the part about being the technical person the customer actually talks to, and that's the part of my current job I like most.

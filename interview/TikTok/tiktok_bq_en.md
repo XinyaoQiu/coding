@@ -8,21 +8,14 @@ The interviewer may speak Chinese or English. This file mirrors `tiktok_bq_ch.md
 
 ### Self-intro
 
-Hi, I'm Xinyao. You can call me Alex. I did my CS master's at UIUC and graduated last December. Before that I was in a dual-degree program between the University of Michigan and Shanghai Jiao Tong. Since February this year I've been a backend engineer at Newsbreak — it's a local news and AI company, and I'm on the server team.
-
-I've worked on a few things there. First, I migrated a batch of our core APIs from JSON to Protobuf. Before that, both the server and the client would just throw whatever fields they wanted into requests and responses. After the migration they share one schema. Second, I own our UGC video upload pipeline. I wrote an anti-abuse middleware that checks IP reputation through ipinfo and does rate limiting. I also moved upload status out of the client's local storage and onto the server, so we can send the real status and the actual failure reason back to the user. Third, I built new features for our premium subscription system — I added a billing-retry state to the state machine so it handles Apple's billing retry window, wrote an ordering guard for out-of-order and duplicate events, and used a Redis lock to prevent concurrent writes from stepping on each other. On top of that I migrated some Mongo databases to a new cluster and tuned indexes and connection pools along the way. I'm also in the on-call rotation, so I spend a fair amount of time digging into production alerts and finding root causes.
-
-Before Newsbreak I had two internships. At ByteDance I was on the TTOP team, working with TTLS. I did data dump work — purging expired records from a large third-party travel dataset — and built an in-app booking service so users didn't have to jump out to a third-party app. At Tesla I did a full-stack project, an internal Gantt-chart-style tool for vehicle engineers to schedule test experiments.
+Hi, I'm Xinyao. I did my master's degree at UIUC and graduated last December. I'm working at NewsBreak since February as a backend engineer on the server team. NewsBreak is an app that focused on the local news for American users.
+At NewsBreak, I worked on three main projects. I migrated core APIs from JSON to Protobuf so the client and server could share a clear schema. I also owned the UGC video upload pipeline, including a rate limiter and making the upload status more reliable for users. And I built the backend for our Premium subscription system, like the purchase APIs, subscription state machine, the notification handler and premium access. I also worked on infra and deployment, and took part in the on-call rotation.
+Before NewsBreak, I had two internships at ByteDance and Tesla.
+I have a strong foundation in backend development and distributed systems, along with hands-on experience building AI agents. I've also worked on production systems and handled real engineering challenges.
 
 ### Why are you looking for a new opportunity
 
-I'm looking for a bigger stage where my work reaches a much larger audience. Newsbreak has been good to me and I got to own a full pipeline end to end there, which is more scope than most people get in their first year. I'm grateful for that.
-
-But the ceiling on scale is real. I want to work on problems where the traffic and the correctness bar are an order of magnitude higher, and TikTok is at the top of that list for me.
-
-I also interned at ByteDance, so I already know the tooling and the infrastructure, and I liked the culture and the pace there. Being able to come back and do this full-time is genuinely exciting.
-
-**Red line:** never criticize Newsbreak, never mention layoffs or re-orgs. Pull factor only — scale and technical bar. If pressed on "why not stay and grow there," answer: the systems I'd want to build next don't exist at that traffic level.
+I've learned a lot at Newsbreak and built a few backend projects there. What I want next is to do user-facing work on a much bigger and more complex system, and that's why I'm interested in TikTok. It's an innovative, fast-growing company, so I think I'd have a lot more room to grow.
 
 ### Career goals
 
@@ -63,13 +56,10 @@ I'm on F-1 OPT, first year. My major is STEM, so with the extension I have rough
 
 ### Self-intro
 
-Hi, I'm Xinyao. You can call me Alex. I did my CS master's at UIUC and graduated last December. Before that I was in a dual-degree program between the University of Michigan and Shanghai Jiao Tong. Since February this year I've been a backend engineer at Newsbreak — it's a local news and AI company, and I'm on the server team.
-
-I've worked on a few things there. First, I migrated a batch of our core APIs from JSON to Protobuf. Before that, both the server and the client would just throw whatever fields they wanted into requests and responses. After the migration they share one schema. Second, I own our UGC video upload pipeline. I wrote an anti-abuse middleware that checks IP reputation through ipinfo and does rate limiting. I also moved upload status out of the client's local storage and onto the server, so we can send the real status and the actual failure reason back to the user. Third, I built new features for our premium subscription system — I added a billing-retry state to the state machine so it handles Apple's billing retry window, wrote an ordering guard for out-of-order and duplicate events, and used a Redis lock to prevent concurrent writes from stepping on each other. On top of that I migrated some Mongo databases to a new cluster and tuned indexes and connection pools along the way. I'm also in the on-call rotation, so I spend a fair amount of time digging into production alerts and finding root causes.
-
-Before Newsbreak I had two internships. At ByteDance I was on the TTOP team, working with TTLS. I did data dump work — processing third-party travel and hotel data, comparing it against historical data and purging the expired records. I also built an in-app booking service so users didn't have to jump out to a third-party app. At Tesla I did a full-stack project, an internal Gantt-chart-style tool for vehicle engineers to schedule test experiments.
-
-I mostly work in Go. Really looking forward to this — let's get started.
+Hi, I'm Xinyao. I did my master's degree at UIUC and graduated last December. I'm working at NewsBreak since February as a backend engineer on the server team. NewsBreak is an app that focused on the local news for American users.
+At NewsBreak, I worked on three main projects. I migrated core APIs from JSON to Protobuf so the client and server could share a clear schema. I also owned the UGC video upload pipeline, including a rate limiter and making the upload status more reliable for users. And I built the backend for our Premium subscription system, like the purchase APIs, subscription state machine, the notification handler and premium access. I also worked on infra and deployment, and took part in the on-call rotation.
+Before NewsBreak, I had two internships at ByteDance and Tesla.
+I have a strong foundation in backend development and distributed systems, along with hands-on experience building AI agents. I've also worked on production systems and handled real engineering challenges.
 
 ### Phrases
 
@@ -157,10 +147,12 @@ Asking the AI for a full solution is fine and expected — what's graded is what
 
 ### Questions to ask
 
-- "What's the main tech stack the team uses?"
-- "What does the code review and release process look like?"
-- "How long does it usually take for someone new to start picking up work independently?"
+- I’d love to learn a little more about your team. What’s an interesting technical challenge you’ve worked on recently?
+- And how do new grads typically get involved in projects like that?
+- What does the onboarding process look like on your team?
 
+- Thanks for sharing! I appreciate you giving me some context about the team.
+- Thanks for sharing! I’d be excited to work on projects like that.
 ---
 
 ## Part 3 — HM Round
@@ -168,7 +160,7 @@ Asking the AI for a full solution is fine and expected — what's graded is what
 ### Self-intro
 
 Hi, I'm Xinyao. I did my master's degree at UIUC and graduated last December. I'm working at NewsBreak since February as a backend engineer on the server team. NewsBreak is an app that focused on the local news for American users.
-At NewsBreak, I worked on three main projects. I migrated core APIs from JSON to Protobuf so the client and server could share a clear schema. I also owned the UGC video upload pipeline, including anti-abuse checks and making upload status more reliable for users. And I built the backend for our Premium subscription system, like the purchase APIs, subscription state machine, the notification handler and premium access. I also worked on infra and deployment, and took part in the on-call rotation.
+At NewsBreak, I worked on three main projects. I migrated core APIs from JSON to Protobuf so the client and server could share a clear schema. I also owned the UGC video upload pipeline, including a rate limiter and making the upload status more reliable for users. And I built the backend for our Premium subscription system, like the purchase APIs, subscription state machine, the notification handler and premium access. I also worked on infra and deployment, and took part in the on-call rotation.
 Before NewsBreak, I had two internships at ByteDance and Tesla.
 I have a strong foundation in backend development and distributed systems, along with hands-on experience building AI agents. I've also worked on production systems and handled real engineering challenges.
 
