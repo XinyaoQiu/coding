@@ -17,49 +17,10 @@ I have a strong foundation in backend development and distributed systems, along
 
 I've learned a lot at Newsbreak and built a few backend projects there. What I want next is to do user-facing work on a much bigger and more complex system, and that's why I'm interested in TikTok. It's an innovative, fast-growing company, so I think I'd have a lot more room to grow.
 
-### Career goals
-
-My direction is pretty clear — I want to go deep on backend and large-scale distributed systems. I'm not looking to switch tracks.
-
-Everything I've done this past year converges on one thing. The state consistency in the subscription system, the cross-system state orchestration in video upload, the Protobuf migration — underneath, they're all about how you keep multiple systems correct with respect to each other. That's the class of problem I find most interesting, and the one I have the best instincts for.
-
-Going forward I want to keep doing this somewhere with a higher engineering bar, and grow from owning one pipeline to being responsible for a wider set of technical decisions. That's exactly why I want to join TT — the problems are hard enough and the team is strong enough that I can do this long term and keep learning.
-
-### Work authorization
-
-I'm on F-1 OPT, first year. My major is STEM, so with the extension I have roughly three years I can work legally. Beyond that, if I stay long term, I'd need the company to sponsor an H1B.
-
-### Recruiter screening questions (short answers)
-
-| Question | Answer |
-|---|---|
-| **Job-search timeline / deadlines** | Actively interviewing, no competing deadlines right now, so I have flexibility. I'd like to wrap up within the next month or two. |
-| **Earliest start date** | Within two weeks of an offer. Timing is flexible. |
-| **Current location / relocation** | Mountain View, CA. San Jose is an easy commute, so no relocation needed. |
-| **5 days onsite** | Yes, fully open to it. |
-| **Preferred coding language** | Most comfortable with Go and Python. Prefer Python for the interview. |
-| **Target level** | Targeting IC2, open to whatever level the interviews suggest is the right fit. |
-| **Work authorization** | Yes, authorized on F-1 OPT. |
-| **Sponsorship needed** | Yes — F-1 OPT with STEM extension eligibility, so H-1B sponsorship later. |
-| **Interview availability** | Flexible, can make any slot work, both the U.S. and the China-based windows. |
-
-**Note:** there are two parallel TikTok pipelines — the NG *Backend Software Engineer Graduate (Global E-commerce) - 2027 Start* (status: Evaluation Passed) and this one. Disclose the other pipeline to the recruiter rather than letting them find it.
-
-### Questions to ask
-
-- "You mentioned the team mainly works on XX — for this role, what would the first six months likely focus on?"
-- "What do the next steps in the process look like?"
 
 ---
 
 ## Part 2 — Coding Round
-
-### Self-intro
-
-Hi, I'm Xinyao. I did my master's degree at UIUC and graduated last December. I'm working at NewsBreak since February as a backend engineer on the server team. NewsBreak is an app that focused on the local news for American users.
-At NewsBreak, I worked on three main projects. I migrated core APIs from JSON to Protobuf so the client and server could share a clear schema. I also owned the UGC video upload pipeline, including a rate limiter and making the upload status more reliable for users. And I built the backend for our Premium subscription system, like the purchase APIs, subscription state machine, the notification handler and premium access. I also worked on infra and deployment, and took part in the on-call rotation.
-Before NewsBreak, I had two internships at ByteDance and Tesla.
-I have a strong foundation in backend development and distributed systems, along with hands-on experience building AI agents. I've also worked on production systems and handled real engineering challenges.
 
 ### Phrases
 
@@ -111,39 +72,6 @@ I have a strong foundation in backend development and distributed systems, along
 6. Finding a new edge case while coding doesn't cost you anything. **Attribute it to the structure of the code**, not to "I forgot."
 7. Alternate, don't parallelize — think 20 seconds, say it out loud, think another 20.
 
-### Prompts (AI-assisted round)
-
-Asking the AI for a full solution is fine and expected — what's graded is what you do after you get it. **AI generates options, you decide; AI implements decisions, you verify.**
-
-| Situation | What to ask the AI |
-|---|---|
-| **Clarifying the problem** | "Split this into two parts: what the statement explicitly says, and what it does NOT say but would change the implementation. Questions only — don't answer them for me." |
-| **Structure named in the problem** | "The statement mentions a \<DAG/tree/cache\>. What makes it necessary? If removing it leaves behavior unchanged, say so." |
-| **Checking your own reading** | "My reading: given ___, calling ___ returns ___. Does that contradict the statement?" |
-| **Stuck on approach** | "Don't write code yet. Give me 2-3 approaches with complexity for each, and the key insight behind the efficient one." |
-| **Ready to implement** | "Implement `def f(...)` using \<your approach\>. Constraints: ___. Handle ___." |
-| **Don't understand a line** | "What does line N do, and what breaks if I remove it?" |
-| **Before trusting the code** | "What inputs would break this? List the assumptions you're least sure about." |
-| **Strongest verification** | "Write an obviously-correct slow version plus a random input generator, and diff them over a few thousand cases." |
-| **Proving tests discriminate** | "Invert the comparison on line N so I can confirm that test goes red." |
-| **Final sweep** | "Any dead code, any test that can never fail, anything the tests don't cover?" |
-
-**Two things to do yourself, not via prompt**
-
-| When | Do |
-|---|---|
-| After the design discussion, **before** any code exists | Hand-write 4-5 `assert` lines — your contract. Tests written after an implementation encode what the code *does*, not what it *should* do. |
-| At least once, in your own terminal | Run it. Never accept "all tests passed" as reported. |
-
-**Anti-patterns**
-
-| Don't | Why |
-|---|---|
-| "How do I solve this?" → paste → "done" | The one genuinely fatal move |
-| Ask AI to write a tech design first | You end up reviewing its architecture instead of authoring your own |
-| Re-prompt the same thing when AI is wrong | Fix it by hand — repeated re-prompting is a strong negative signal |
-| Accept reported test results | Treat the tool as suspect — that's the whole point of the format |
-| Only ask for hints, never answers | Downgrades the AI to a slow search engine, and reads as performing |
 
 ### Questions to ask
 
@@ -156,13 +84,6 @@ Asking the AI for a full solution is fine and expected — what's graded is what
 ---
 
 ## Part 3 — HM Round
-
-### Self-intro
-
-Hi, I'm Xinyao. I did my master's degree at UIUC and graduated last December. I'm working at NewsBreak since February as a backend engineer on the server team. NewsBreak is an app that focused on the local news for American users.
-At NewsBreak, I worked on three main projects. I migrated core APIs from JSON to Protobuf so the client and server could share a clear schema. I also owned the UGC video upload pipeline, including a rate limiter and making the upload status more reliable for users. And I built the backend for our Premium subscription system, like the purchase APIs, subscription state machine, the notification handler and premium access. I also worked on infra and deployment, and took part in the on-call rotation.
-Before NewsBreak, I had two internships at ByteDance and Tesla.
-I have a strong foundation in backend development and distributed systems, along with hands-on experience building AI agents. I've also worked on production systems and handled real engineering challenges.
 
 ### Main story 1 — Premium subscription system
 
