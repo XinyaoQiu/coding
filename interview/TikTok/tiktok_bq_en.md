@@ -4,7 +4,7 @@ The interviewer may speak Chinese or English. This file mirrors `tiktok_bq_ch.md
 
 ---
 
-## Part 1 — HR Screen
+## Part 1 — Base
 
 ### Self-intro
 
