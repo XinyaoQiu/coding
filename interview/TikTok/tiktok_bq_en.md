@@ -15,6 +15,8 @@ I have a strong foundation in backend development and distributed systems, along
 
 ### Why are you looking for a new opportunity
 
+I'm in the first year of OPT, and I need H-1B next year. My current employer doesn't provide sponsorship for H-1B. So I'm looking for new opportunities.
+
 I've learned a lot at Newsbreak and built a few backend projects there. What I want next is to do user-facing work on a much bigger and more complex system, and that's why I'm interested in TikTok. It's an innovative, fast-growing company, so I think I'd have a lot more room to grow.
 
 
